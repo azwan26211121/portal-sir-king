@@ -1,0 +1,6 @@
+{
+  "name": "Portal Panduan Pembelajaran, Latihan & SOP",
+  "description": "Platform bersepadu untuk panduan pembelajaran berstruktur (Word & PDF), latihan teori Google Form dalam talian, dan SOP latihan amali bengkel mengikut peranan pengguna.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

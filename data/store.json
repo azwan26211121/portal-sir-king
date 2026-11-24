@@ -1,0 +1,334 @@
+{
+  "adminEmail": "azwan26211121@gmail.com",
+  "adminPasswordHash": "bdf0cbe6df597c425c4659b76d551138:2c19bb3d8878b064515c49002e206d6a670778941be8b7b1b0acaa88ee86db7ecf9f7932039d68084e7a270f991e48d4728cefc591524da7075faeb1dd9bfa39",
+  "branding": {
+    "portalName": "SIRKING Learning Portal",
+    "portalTagline": "Your Gateway to Knowledge & Success",
+    "customLogoStoredName": null,
+    "customLogoMimeType": null,
+    "customBannerStoredName": null,
+    "customBannerMimeType": null,
+    "updatedAt": "2026-11-24T04:23:38.627Z"
+  },
+  "users": [
+    {
+      "id": "admin-root",
+      "name": "Master Admin",
+      "email": "azwan26211121@gmail.com",
+      "role": "master_admin",
+      "status": "approved",
+      "supervisorId": null,
+      "requestedLevelId": null,
+      "approvedLevelId": null,
+      "createdAt": "2026-11-24T03:47:55.962Z",
+      "updatedAt": "2026-11-24T03:47:55.962Z",
+      "userId": "master_admin"
+    },
+    {
+      "id": "admin-1",
+      "userId": "admin1",
+      "name": "Admin 1",
+      "role": "admin",
+      "status": "approved",
+      "passwordHash": null,
+      "supervisorId": null,
+      "requestedLevelId": null,
+      "approvedLevelId": null,
+      "createdAt": "2026-11-24T04:10:11.043Z",
+      "updatedAt": "2026-11-24T04:10:11.043Z"
+    },
+    {
+      "id": "admin-2",
+      "userId": "admin2",
+      "name": "Admin 2",
+      "role": "admin",
+      "status": "approved",
+      "passwordHash": null,
+      "supervisorId": null,
+      "requestedLevelId": null,
+      "approvedLevelId": null,
+      "createdAt": "2026-11-24T04:10:11.043Z",
+      "updatedAt": "2026-11-24T04:10:11.043Z"
+    }
+  ],
+  "levels": [
+    {
+      "id": "lvl-2",
+      "code": "TAHAP 2",
+      "title": "Asas Pemasangan & Penyelenggaraan Bengkel",
+      "description": "Pengenalan komponen asas, lukisan skematik, keselamatan bengkel, dan amali pemasangan asas.",
+      "order": 1,
+      "teoriSub1Title": "Sub 1: Konsep Asas & Nota Teras",
+      "teoriSub2Title": "Sub 2: Aplikasi Lanjutan & Panduan Soalan",
+      "amaliSub1Title": "Sub 1: Persediaan & Keselamatan (LOTO · PPE)",
+      "amaliSub2Title": "Sub 2: Pelaksanaan Kerja & Pengujian (PCD)"
+    },
+    {
+      "id": "lvl-3",
+      "code": "TAHAP 3",
+      "title": "Kawalan Industri & Penyeliaan Teknikal",
+      "description": "Sistem kawalan motor, litar automasi PLC, pengujian litar berbeban, dan prosedur LOTO.",
+      "order": 2,
+      "teoriSub1Title": "Sub 1: Konsep Asas & Nota Teras",
+      "teoriSub2Title": "Sub 2: Aplikasi Lanjutan & Panduan Soalan",
+      "amaliSub1Title": "Sub 1: Persediaan & Keselamatan (LOTO · PPE)",
+      "amaliSub2Title": "Sub 2: Pelaksanaan Kerja & Pengujian (PCD)"
+    },
+    {
+      "id": "lvl-4",
+      "code": "TAHAP 4",
+      "title": "Pengurusan Sistem & Diagnostik Lanjutan",
+      "description": "Audit keselamatan menyeluruh, pengesanan kerosakan lanjutan, dan pengurusan SOP operasi.",
+      "order": 3,
+      "teoriSub1Title": "Sub 1: Konsep Asas & Nota Teras",
+      "teoriSub2Title": "Sub 2: Aplikasi Lanjutan & Panduan Soalan",
+      "amaliSub1Title": "Sub 1: Persediaan & Keselamatan (LOTO · PPE)",
+      "amaliSub2Title": "Sub 2: Pelaksanaan Kerja & Pengujian (PCD)"
+    }
+  ],
+  "cus": [
+    {
+      "id": "cu-201",
+      "levelId": "lvl-2",
+      "code": "CU-01",
+      "title": "Keselamatan Bengkel & Peraturan PPE Asas",
+      "description": "Memahami piawaian keselamatan bengkel, penggunaan PPE yang betul, dan tatacara pengasingan asas.",
+      "order": 1,
+      "teoriSub1": {
+        "notaSlot": null,
+        "panduanSoalanSlot": null,
+        "googleFormUrl": "",
+        "googleFormTitle": "Latihan Teori CU-01: Keselamatan Bengkel & PPE"
+      },
+      "teoriSub2": {
+        "notaSlot": null,
+        "panduanSoalanSlot": null,
+        "googleFormUrl": "",
+        "googleFormTitle": "Latihan Teori Sub 2 — CU-01"
+      },
+      "amaliSub1": {
+        "sopDocSlot": null,
+        "sopSteps": [
+          {
+            "id": "sop-201-1",
+            "category": "PPE",
+            "title": "Pemeriksaan PPE Lengkap",
+            "instruction": "Pastikan kasut keselamatan bertutup, cermin mata pelindung, dan sarung tangan berpenebat dipakai sebelum memasuki zon kerja.",
+            "critical": true
+          },
+          {
+            "id": "sop-201-2",
+            "category": "LOTO",
+            "title": "Pengesahan Suis Utama & Lock-Out",
+            "instruction": "Matikan suis bekalan utama, pasang kunci LOTO peribadi, dan gantung tag amaran bertulis nama pelatih.",
+            "critical": true
+          },
+          {
+            "id": "sop-201-3",
+            "category": "PCD",
+            "title": "Semakan Peranti Perlindungan (PCD)",
+            "instruction": "Uji butang tekan RCCB/ELCB dan pastikan peranti pemutus litar berfungsi sebelum menghidupkan beban.",
+            "critical": false
+          }
+        ]
+      },
+      "amaliSub2": {
+        "sopDocSlot": null,
+        "sopSteps": []
+      }
+    },
+    {
+      "id": "cu-202",
+      "levelId": "lvl-2",
+      "code": "CU-02",
+      "title": "Lukisan Skematik & Pengukuran Komponen",
+      "description": "Membaca simbol piawai industri serta mengendalikan multimeter dan penguji penebatan dengan tepat.",
+      "order": 2,
+      "teoriSub1": {
+        "notaSlot": null,
+        "panduanSoalanSlot": null,
+        "googleFormUrl": "",
+        "googleFormTitle": "Latihan Teori CU-02: Lukisan Skematik & Pengukuran"
+      },
+      "teoriSub2": {
+        "notaSlot": null,
+        "panduanSoalanSlot": null,
+        "googleFormUrl": "",
+        "googleFormTitle": "Latihan Teori Sub 2 — CU-02"
+      },
+      "amaliSub1": {
+        "sopDocSlot": null,
+        "sopSteps": [
+          {
+            "id": "sop-202-1",
+            "category": "PCD",
+            "title": "Kalibrasi & Julat Alat Ukur",
+            "instruction": "Pastikan probe multimeter bebas kerosakan penebat dan tetapkan julat pengukuran yang betul sebelum menyentuh terminal.",
+            "critical": true
+          },
+          {
+            "id": "sop-202-2",
+            "category": "Langkah Kerja",
+            "title": "Ujian Kesinambungan Litar Mati",
+            "instruction": "Sahkan ketiadaan voltan menggunakan penguji voltan sebelum menjalankan ujian rintangan dan kesinambungan.",
+            "critical": true
+          }
+        ]
+      },
+      "amaliSub2": {
+        "sopDocSlot": null,
+        "sopSteps": []
+      }
+    },
+    {
+      "id": "cu-301",
+      "levelId": "lvl-3",
+      "code": "CU-01",
+      "title": "Kawalan Motor Tiga Fasa & Pemula DOL",
+      "description": "Pendawaian litar kuasa dan litar kawalan pemula terus pada talian (DOL) serta pengujian beban.",
+      "order": 1,
+      "teoriSub1": {
+        "notaSlot": null,
+        "panduanSoalanSlot": null,
+        "googleFormUrl": "",
+        "googleFormTitle": "Latihan Teori CU-01: Kawalan Motor DOL"
+      },
+      "teoriSub2": {
+        "notaSlot": null,
+        "panduanSoalanSlot": null,
+        "googleFormUrl": "",
+        "googleFormTitle": "Latihan Teori Sub 2 — CU-01"
+      },
+      "amaliSub1": {
+        "sopDocSlot": null,
+        "sopSteps": [
+          {
+            "id": "sop-301-1",
+            "category": "LOTO",
+            "title": "Pengasingan Bekalan Tiga Fasa (LOTO)",
+            "instruction": "Asingkan isolator 3-fasa, kunci pemutus litar utama, dan sahkan voltan sifar (L1-L2-L3-N-PE).",
+            "critical": true
+          },
+          {
+            "id": "sop-301-2",
+            "category": "PCD",
+            "title": "Pelarasan Geganti Beban Lampau (TOR)",
+            "instruction": "Tetapkan arus beban lampau mengikut plat nama motor sebelum ujian pengaktifan.",
+            "critical": true
+          },
+          {
+            "id": "sop-301-3",
+            "category": "PPE",
+            "title": "Perlindungan Arka & Ruang Selamat",
+            "instruction": "Pastikan penutup panel kawalan ditutup kemas dan pengajar berada berdekatan sebelum menghidupkan bekalan.",
+            "critical": false
+          }
+        ]
+      },
+      "amaliSub2": {
+        "sopDocSlot": null,
+        "sopSteps": []
+      }
+    },
+    {
+      "id": "cu-302",
+      "levelId": "lvl-3",
+      "code": "CU-02",
+      "title": "Asas Pengaturcaraan PLC & Sensor Industri",
+      "description": "Pembangunan gambar rajah tangga (Ladder Diagram), penyambungan I/O, dan simulasi jujukan automasi.",
+      "order": 2,
+      "teoriSub1": {
+        "notaSlot": null,
+        "panduanSoalanSlot": null,
+        "googleFormUrl": "",
+        "googleFormTitle": "Latihan Teori CU-02: Pengaturcaraan PLC"
+      },
+      "teoriSub2": {
+        "notaSlot": null,
+        "panduanSoalanSlot": null,
+        "googleFormUrl": "",
+        "googleFormTitle": "Latihan Teori Sub 2 — CU-02"
+      },
+      "amaliSub1": {
+        "sopDocSlot": null,
+        "sopSteps": [
+          {
+            "id": "sop-302-1",
+            "category": "PCD",
+            "title": "Perlindungan Bekalan Kuasa 24V DC",
+            "instruction": "Semak kekutuban +24V/0V dan fius perlindungan modul input/output PLC sebelum memuat naik atur cara.",
+            "critical": true
+          },
+          {
+            "id": "sop-302-2",
+            "category": "Langkah Kerja",
+            "title": "Ujian Butang Henti Kecemasan (E-Stop)",
+            "instruction": "Sahkan litar E-Stop berfungsi memutuskan kuasa aktuator secara fizikal dan logik.",
+            "critical": true
+          }
+        ]
+      },
+      "amaliSub2": {
+        "sopDocSlot": null,
+        "sopSteps": []
+      }
+    },
+    {
+      "id": "cu-401",
+      "levelId": "lvl-4",
+      "code": "CU-01",
+      "title": "Diagnostik Kerosakan & Audit Keselamatan SOP",
+      "description": "Kaedah mencari punca kerosakan sistematik, analisis kegagalan sistem, dan penyediaan laporan audit.",
+      "order": 1,
+      "teoriSub1": {
+        "notaSlot": null,
+        "panduanSoalanSlot": null,
+        "googleFormUrl": "",
+        "googleFormTitle": "Latihan Teori CU-01: Diagnostik & Audit SOP"
+      },
+      "teoriSub2": {
+        "notaSlot": null,
+        "panduanSoalanSlot": null,
+        "googleFormUrl": "",
+        "googleFormTitle": "Latihan Teori Sub 2 — CU-01"
+      },
+      "amaliSub1": {
+        "sopDocSlot": null,
+        "sopSteps": [
+          {
+            "id": "sop-401-1",
+            "category": "LOTO",
+            "title": "Permit Kerja & Pengasingan Berbilang Punca",
+            "instruction": "Lengkapkan borang permit kerja selamat dan kunci semua punca tenaga elektrik serta pneumatik.",
+            "critical": true
+          },
+          {
+            "id": "sop-401-2",
+            "category": "PPE",
+            "title": "Peralatan Perlindungan Diagnostik Voltan",
+            "instruction": "Gunakan sarung tangan berpenebat Kelas 0 dan pelindung muka semasa pengukuran litar hidup yang dibenarkan.",
+            "critical": true
+          }
+        ]
+      },
+      "amaliSub2": {
+        "sopDocSlot": null,
+        "sopSteps": []
+      }
+    }
+  ],
+  "sopProgress": [],
+  "accessLogs": [],
+  "sessions": [
+    {
+      "tokenHash": "371ef10abf369eedac6a0cb02e04b7af82ef8839507b54b2b8d8d5b7019c8697",
+      "userId": "admin-root",
+      "expiresAt": 1796097722359
+    },
+    {
+      "tokenHash": "231de4a8869cef6043996206b05c37c68816e5929f6ae55a491c20942af99ab0",
+      "userId": "admin-root",
+      "expiresAt": 1796098952914
+    }
+  ]
+}
