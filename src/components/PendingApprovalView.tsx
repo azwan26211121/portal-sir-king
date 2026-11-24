@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Clock, LogOut, RefreshCw, XCircle } from 'lucide-react';
 import type { BrandingConfig, PublicUser } from '../types.ts';
+import { PortalQrFooter } from './PortalQrFooter.tsx';
 
 interface PendingApprovalViewProps {
   branding: BrandingConfig;
@@ -30,8 +31,8 @@ export function PendingApprovalView({
   const isRejected = user.status === 'rejected';
 
   return (
-    <div className="min-h-screen bg-[#f4f7fb] flex flex-col">
-      <header className="bg-[#061b44] border-b border-[#16428e]/50 px-6 py-3.5 flex items-center justify-between gap-8">
+    <div className="min-h-screen bg-[#060d1f] text-slate-100 flex flex-col">
+      <header className="bg-[#041029]/95 border-b border-[#1c366b] px-6 py-3.5 flex items-center justify-between gap-8">
         <div className="flex items-center gap-3 whitespace-nowrap shrink-0">
           {!logoFailed ? (
             <img
@@ -50,13 +51,13 @@ export function PendingApprovalView({
             {branding.portalName}
           </span>
         </div>
-        <div className="hidden md:flex items-center gap-6 text-sm text-blue-100/80">
+        <div className="hidden md:flex items-center gap-6 text-sm text-slate-300">
           <span className="whitespace-nowrap shrink-0">Status Pendaftaran Pelatih</span>
         </div>
         <button
           type="button"
           onClick={onLogout}
-          className="px-4 py-2 text-xs font-semibold text-[#041434] bg-[#e5b94c] hover:bg-[#d4af37] rounded-lg transition-colors whitespace-nowrap shrink-0 flex items-center gap-2"
+          className="px-4 py-2 text-xs font-semibold text-[#041434] bg-[#e5b94c] hover:bg-[#f0cb63] rounded-lg transition-colors whitespace-nowrap shrink-0 flex items-center gap-2"
         >
           <LogOut className="w-3.5 h-3.5" />
           <span>Log Keluar</span>
@@ -64,54 +65,56 @@ export function PendingApprovalView({
       </header>
 
       <main className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-xl bg-white border border-slate-200 rounded-xl p-8">
+        <div className="w-full max-w-xl bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-8">
           <div className="flex items-start gap-4">
             <div
               className={`p-3 rounded-lg shrink-0 ${
-                isRejected ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'
+                isRejected
+                  ? 'bg-red-950/60 border border-red-800/60 text-red-300'
+                  : 'bg-amber-950/60 border border-amber-700/60 text-amber-300'
               }`}
             >
               {isRejected ? <XCircle className="w-6 h-6" /> : <Clock className="w-6 h-6" />}
             </div>
             <div>
-              <h1 className="text-xl font-bold text-[#061b44]">
+              <h1 className="text-xl font-bold text-white">
                 {isRejected
                   ? 'Permohonan Akses Pelatih Tidak Diluluskan'
-                  : 'Menunggu Kelulusan Pengajar'}
+                  : branding.pendingTitle}
               </h1>
-              <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+              <p className="mt-2 text-sm text-slate-300 leading-relaxed">
                 {isRejected
                   ? 'Permohonan pendaftaran anda ditandakan sebagai tidak diluluskan. Sila berhubung dengan pengajar penyelia atau admin website untuk semakan semula.'
-                  : 'Pendaftaran akaun anda telah direkodkan. Kandungan nota, latihan Google Form, dan SOP bengkel akan dibuka sebaik sahaja pengajar penyelia meluluskan akaun anda.'}
+                  : branding.pendingMessage}
               </p>
             </div>
           </div>
 
-          <div className="mt-8 border-t border-slate-200 pt-6 grid sm:grid-cols-2 gap-4 text-sm">
+          <div className="mt-8 border-t border-[#1a2f5c] pt-6 grid sm:grid-cols-2 gap-4 text-sm">
             <div>
-              <p className="text-xs text-slate-500">Nama Pelatih &amp; User ID</p>
-              <p className="mt-1 font-medium text-slate-900">{user.name}</p>
-              <p className="mt-0.5 text-xs font-mono text-[#0a2e6c]">User ID: {user.userId}</p>
+              <p className="text-xs text-slate-400">Nama Pelatih &amp; User ID</p>
+              <p className="mt-1 font-medium text-white">{user.name}</p>
+              <p className="mt-0.5 text-xs font-mono text-[#f0cb63]">User ID: {user.userId}</p>
             </div>
             <div>
-              <p className="text-xs text-slate-500">Nama Guru Penyelia</p>
-              <p className="mt-1 font-medium text-slate-900">
+              <p className="text-xs text-slate-400">Nama Guru Penyelia</p>
+              <p className="mt-1 font-medium text-white">
                 {user.supervisorName || 'Pentadbir Utama'}
               </p>
             </div>
             <div>
-              <p className="text-xs text-slate-500">Status Semasa</p>
+              <p className="text-xs text-slate-400">Status Semasa</p>
               <p
                 className={`mt-1 font-medium ${
-                  isRejected ? 'text-red-700' : 'text-amber-700'
+                  isRejected ? 'text-red-400' : 'text-amber-400'
                 }`}
               >
                 {isRejected ? 'Ditolak' : 'Menunggu Kelulusan (Pending)'}
               </p>
             </div>
             <div>
-              <p className="text-xs text-slate-500">Tarikh Daftar</p>
-              <p className="mt-1 font-mono text-xs text-slate-700 tabular-nums">
+              <p className="text-xs text-slate-400">Tarikh Daftar</p>
+              <p className="mt-1 font-mono text-xs text-slate-300 tabular-nums">
                 {new Date(user.createdAt).toLocaleString('ms-MY')}
               </p>
             </div>
@@ -122,7 +125,7 @@ export function PendingApprovalView({
               type="button"
               onClick={handleCheck}
               disabled={checking}
-              className="px-4 py-2.5 bg-[#0a2e6c] hover:bg-[#061b44] disabled:opacity-60 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap"
+              className="px-4 py-2.5 bg-[#e5b94c] hover:bg-[#f0cb63] disabled:opacity-60 text-[#041434] text-sm font-semibold rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap"
             >
               <RefreshCw className={`w-4 h-4 ${checking ? 'animate-spin' : ''}`} />
               <span>{checking ? 'Menyemak...' : 'Semak Status Kelulusan'}</span>
@@ -130,6 +133,8 @@ export function PendingApprovalView({
           </div>
         </div>
       </main>
+
+      <PortalQrFooter branding={branding} />
     </div>
   );
 }

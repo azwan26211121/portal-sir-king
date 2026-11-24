@@ -67,14 +67,34 @@ export const api = {
 
   updateBrandingText(
     token: string,
-    portalName: string,
-    portalTagline: string
+    payload: Partial<{
+      portalName: string;
+      portalTagline: string;
+      heroHeadline: string;
+      feature1Title: string;
+      feature1Desc: string;
+      feature2Title: string;
+      feature2Desc: string;
+      feature3Title: string;
+      feature3Desc: string;
+      authGateTitle: string;
+      authGateSubtitle: string;
+      welcomePrefix: string;
+      footerCaption: string;
+      pendingTitle: string;
+      pendingMessage: string;
+      paymentQrTitle: string;
+      paymentQrNote: string;
+      whatsappQrTitle: string;
+      whatsappQrNote: string;
+      whatsappUrl: string;
+    }>
   ): Promise<{ branding: BrandingConfig }> {
     return requestJson(
       '/api/branding',
       {
         method: 'PATCH',
-        body: JSON.stringify({ portalName, portalTagline }),
+        body: JSON.stringify(payload),
       },
       token
     );
@@ -82,7 +102,7 @@ export const api = {
 
   uploadBrandingImage(
     token: string,
-    kind: 'logo' | 'banner',
+    kind: 'logo' | 'banner' | 'payment-qr' | 'whatsapp-qr',
     file: File
   ): Promise<{ branding: BrandingConfig }> {
     const formData = new FormData();
@@ -96,7 +116,7 @@ export const api = {
 
   resetBrandingImage(
     token: string,
-    kind: 'logo' | 'banner'
+    kind: 'logo' | 'banner' | 'payment-qr' | 'whatsapp-qr'
   ): Promise<{ branding: BrandingConfig }> {
     return requestJson(
       `/api/branding/${encodeURIComponent(kind)}`,

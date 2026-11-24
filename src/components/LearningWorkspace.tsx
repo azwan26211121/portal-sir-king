@@ -241,9 +241,9 @@ export function LearningWorkspace({
 
   if (!activeLevel) {
     return (
-      <div className="bg-white border border-slate-200 rounded-xl p-10 text-center">
-        <p className="text-base font-semibold text-slate-900">Tiada Tahap Pembelajaran Tersedia</p>
-        <p className="mt-2 text-sm text-slate-600">
+      <div className="bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-10 text-center">
+        <p className="text-base font-semibold text-white">Tiada Tahap Pembelajaran Tersedia</p>
+        <p className="mt-2 text-sm text-slate-300">
           Tahap pembelajaran anda belum ditetapkan atau masih kosong. Sila hubungi pengajar atau admin website.
         </p>
       </div>
@@ -266,17 +266,17 @@ export function LearningWorkspace({
   return (
     <div className="space-y-6">
       {/* Stage 1: Pilih Topik / Tahap */}
-      <section aria-labelledby="stage-level-heading" className="bg-white border border-slate-200 rounded-xl p-6">
+      <section aria-labelledby="stage-level-heading" className="bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
           <div>
-            <p className="text-xs font-medium text-[#0a2e6c]">Langkah 1 · Pilih Topik / Tahap</p>
-            <h2 id="stage-level-heading" className="mt-1 text-lg font-bold text-slate-900">
+            <p className="text-xs font-medium text-[#f0cb63]">Langkah 1 · Pilih Topik / Tahap</p>
+            <h2 id="stage-level-heading" className="mt-1 text-lg font-bold text-white">
               {user.role === 'pelatih'
                 ? 'Tahap Pembelajaran Diluluskan'
                 : 'Semua Topik & Tahap Pembelajaran'}
             </h2>
           </div>
-          <p className="text-xs text-slate-500 font-mono tabular-nums">
+          <p className="text-xs text-slate-400 font-mono tabular-nums">
             {levels.length} Tahap · {cus.length} Unit Kompetensi (CU)
           </p>
         </div>
@@ -295,23 +295,23 @@ export function LearningWorkspace({
                 }}
                 className={`text-left p-4 rounded-xl border transition-colors ${
                   isSelected
-                    ? 'border-[#0a2e6c] bg-[#eef3fb]/70'
-                    : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50'
+                    ? 'border-[#e5b94c] bg-[#10234d]'
+                    : 'border-[#1a2f5c] bg-[#081228] hover:border-[#2a4a8a] hover:bg-[#0e1d3d]'
                 }`}
               >
                 <div className="flex items-center justify-between gap-2 text-xs">
-                  <span className="font-mono font-semibold text-[#0a2e6c]">{lvl.code}</span>
-                  <span className="font-mono text-slate-500 tabular-nums">{count} CU</span>
+                  <span className="font-mono font-semibold text-[#f0cb63]">{lvl.code}</span>
+                  <span className="font-mono text-slate-400 tabular-nums">{count} CU</span>
                 </div>
-                <p className="mt-2 text-sm font-semibold text-slate-900 line-clamp-2">{lvl.title}</p>
-                <div className="mt-2.5 pt-2.5 border-t border-slate-200/80 space-y-1 text-xs text-slate-600">
+                <p className="mt-2 text-sm font-semibold text-white line-clamp-2">{lvl.title}</p>
+                <div className="mt-2.5 pt-2.5 border-t border-[#1a2f5c] space-y-1 text-xs text-slate-300">
                   <p className="truncate">
-                    <span className="font-medium text-slate-800">Teori (2 Sub):</span>{' '}
+                    <span className="font-medium text-slate-100">Teori (2 Sub):</span>{' '}
                     {lvl.teoriSub1Title.replace(/^Sub 1:\s*/i, '')} /{' '}
                     {lvl.teoriSub2Title.replace(/^Sub 2:\s*/i, '')}
                   </p>
                   <p className="truncate">
-                    <span className="font-medium text-slate-800">Amali (2 Sub):</span>{' '}
+                    <span className="font-medium text-slate-100">Amali (2 Sub):</span>{' '}
                     {lvl.amaliSub1Title.replace(/^Sub 1:\s*/i, '')} /{' '}
                     {lvl.amaliSub2Title.replace(/^Sub 2:\s*/i, '')}
                   </p>
@@ -323,18 +323,18 @@ export function LearningWorkspace({
       </section>
 
       {/* Stage 2: Pilih Bahagian (Teori, Amali & SOP, Latihan) */}
-      <section aria-labelledby="stage-section-heading" className="bg-white border border-slate-200 rounded-xl p-6">
+      <section aria-labelledby="stage-section-heading" className="bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-            <p className="text-xs font-medium text-[#0a2e6c]">
+            <p className="text-xs font-medium text-[#f0cb63]">
               Langkah 2 · Pilih Bahagian ({activeLevel.code})
             </p>
-            <h2 id="stage-section-heading" className="mt-1 text-lg font-bold text-slate-900">
+            <h2 id="stage-section-heading" className="mt-1 text-lg font-bold text-white">
               Fokus Pembelajaran Semasa
             </h2>
           </div>
 
-          <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 rounded-lg">
+          <div className="grid grid-cols-3 gap-1 p-1 bg-[#071024] border border-[#1a2f5c] rounded-lg">
             {(
               [
                 { id: 'teori', label: 'Teori (2 Sub)', icon: BookOpen },
@@ -351,8 +351,8 @@ export function LearningWorkspace({
                   onClick={() => onSelectSection(tab.id)}
                   className={`px-3.5 py-2 text-xs sm:text-sm font-medium rounded-md transition-colors flex items-center justify-center gap-2 whitespace-nowrap ${
                     active
-                      ? 'bg-white text-[#0a2e6c] shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-[#17356e] text-[#f0cb63] shadow-sm font-semibold'
+                      : 'text-slate-400 hover:text-slate-100'
                   }`}
                 >
                   <Icon className="w-4 h-4 shrink-0" />
@@ -367,11 +367,11 @@ export function LearningWorkspace({
       {/* Stage 3: Pilih CU / Tajuk Khusus & Kandungan Terperingkat */}
       <section aria-labelledby="stage-cu-heading" className="grid lg:grid-cols-12 gap-6 items-start">
         {/* CU Selector Rail */}
-        <div className="lg:col-span-4 bg-white border border-slate-200 rounded-xl p-5">
-          <div className="flex items-center justify-between gap-2 pb-4 border-b border-slate-200">
+        <div className="lg:col-span-4 bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-5">
+          <div className="flex items-center justify-between gap-2 pb-4 border-b border-[#1a2f5c]">
             <div>
-              <p className="text-xs font-medium text-[#0a2e6c]">Langkah 3 · Pilih CU</p>
-              <h3 id="stage-cu-heading" className="mt-0.5 text-base font-bold text-slate-900">
+              <p className="text-xs font-medium text-[#f0cb63]">Langkah 3 · Pilih CU</p>
+              <h3 id="stage-cu-heading" className="mt-0.5 text-base font-bold text-white">
                 Senarai Unit Kompetensi
               </h3>
             </div>
@@ -379,7 +379,7 @@ export function LearningWorkspace({
               <button
                 type="button"
                 onClick={() => setShowAddCu(!showAddCu)}
-                className="px-2.5 py-1.5 text-xs font-medium text-[#0a2e6c] bg-[#eef3fb] hover:bg-[#dce6f7] rounded-lg transition-colors flex items-center gap-1 whitespace-nowrap"
+                className="px-2.5 py-1.5 text-xs font-medium text-[#f0cb63] bg-[#122652] hover:bg-[#1a356e] border border-[#264380] rounded-lg transition-colors flex items-center gap-1 whitespace-nowrap"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Tambah CU</span>
@@ -388,15 +388,15 @@ export function LearningWorkspace({
           </div>
 
           {showAddCu && canEdit && (
-            <form onSubmit={handleCreateCu} className="mt-4 p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-3">
-              <p className="text-xs font-semibold text-slate-900">CU Baharu ({activeLevel.code})</p>
+            <form onSubmit={handleCreateCu} className="mt-4 p-4 rounded-lg bg-[#071024] border border-[#1a2f5c] space-y-3">
+              <p className="text-xs font-semibold text-white">CU Baharu ({activeLevel.code})</p>
               <input
                 type="text"
                 required
                 value={newCuCode}
                 onChange={(e) => setNewCuCode(e.target.value)}
                 placeholder="Kod CU (cth: CU-03)"
-                className="w-full px-3 py-2 text-xs font-mono border border-slate-300 rounded-lg bg-white"
+                className="w-full px-3 py-2 text-xs font-mono border border-[#263f73] rounded-lg bg-[#0b1733] text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#e5b94c]"
               />
               <input
                 type="text"
@@ -404,27 +404,27 @@ export function LearningWorkspace({
                 value={newCuTitle}
                 onChange={(e) => setNewCuTitle(e.target.value)}
                 placeholder="Tajuk CU"
-                className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white"
+                className="w-full px-3 py-2 text-xs border border-[#263f73] rounded-lg bg-[#0b1733] text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#e5b94c]"
               />
               <textarea
                 rows={2}
                 value={newCuDesc}
                 onChange={(e) => setNewCuDesc(e.target.value)}
                 placeholder="Ringkasan topik (pilihan)"
-                className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white"
+                className="w-full px-3 py-2 text-xs border border-[#263f73] rounded-lg bg-[#0b1733] text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#e5b94c]"
               />
               <div className="flex items-center gap-2">
                 <button
                   type="submit"
                   disabled={addingCu}
-                  className="px-3 py-1.5 text-xs font-medium text-white bg-[#0a2e6c] hover:bg-[#061b44] rounded-lg"
+                  className="px-3 py-1.5 text-xs font-semibold text-[#041434] bg-[#e5b94c] hover:bg-[#f0cb63] rounded-lg"
                 >
                   {addingCu ? 'Menyimpan...' : 'Simpan CU'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowAddCu(false)}
-                  className="px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900"
+                  className="px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-slate-100"
                 >
                   Batal
                 </button>
@@ -432,9 +432,9 @@ export function LearningWorkspace({
             </form>
           )}
 
-          <div className="mt-4 divide-y divide-slate-200">
+          <div className="mt-4 divide-y divide-[#1a2f5c]">
             {levelCUs.length === 0 ? (
-              <p className="py-6 text-sm text-slate-500 text-center">
+              <p className="py-6 text-sm text-slate-400 text-center">
                 Belum ada CU didaftarkan untuk tahap ini.
               </p>
             ) : (
@@ -455,29 +455,29 @@ export function LearningWorkspace({
                     type="button"
                     onClick={() => onSelectCu(cu.id)}
                     className={`w-full text-left py-3.5 px-3 -mx-1 rounded-lg transition-colors flex items-start justify-between gap-3 ${
-                      isActive ? 'bg-blue-50/80' : 'hover:bg-slate-50'
+                      isActive ? 'bg-[#10234d] ring-1 ring-[#e5b94c]/50' : 'hover:bg-[#112247]/60'
                     }`}
                   >
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 text-xs">
-                        <span className="font-mono font-semibold text-[#0a2e6c]">{cu.code}</span>
-                        <span className="text-slate-400" aria-hidden="true">·</span>
-                        <span className="text-slate-500 font-mono tabular-nums">
+                        <span className="font-mono font-semibold text-[#f0cb63]">{cu.code}</span>
+                        <span className="text-slate-600" aria-hidden="true">·</span>
+                        <span className="text-slate-400 font-mono tabular-nums">
                           Teori {teoriDocsCount}/4
                         </span>
-                        <span className="text-slate-400" aria-hidden="true">·</span>
-                        <span className={formCount > 0 ? 'text-emerald-700 font-mono tabular-nums' : 'text-slate-400 font-mono tabular-nums'}>
+                        <span className="text-slate-600" aria-hidden="true">·</span>
+                        <span className={formCount > 0 ? 'text-emerald-400 font-mono tabular-nums' : 'text-slate-500 font-mono tabular-nums'}>
                           Borang {formCount}/2
                         </span>
                       </div>
-                      <p className="mt-1 text-sm font-semibold text-slate-900">{cu.title}</p>
-                      <p className="mt-0.5 text-xs text-slate-500 font-mono tabular-nums">
+                      <p className="mt-1 text-sm font-semibold text-white">{cu.title}</p>
+                      <p className="mt-0.5 text-xs text-slate-400 font-mono tabular-nums">
                         Amali SOP: {sopStepsTotal} langkah (Sub 1 &amp; Sub 2)
                       </p>
                     </div>
                     <ChevronRight
                       className={`w-4 h-4 mt-1 shrink-0 ${
-                        isActive ? 'text-[#0a2e6c]' : 'text-slate-400'
+                        isActive ? 'text-[#f0cb63]' : 'text-slate-500'
                       }`}
                     />
                   </button>
@@ -490,28 +490,28 @@ export function LearningWorkspace({
         {/* Selected CU Content Pane */}
         <div className="lg:col-span-8">
           {!activeCU || !activeTeoriSub || !activeAmaliSub ? (
-            <div className="bg-white border border-slate-200 rounded-xl p-10 text-center">
+            <div className="bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-10 text-center">
               <Folder className="w-8 h-8 text-slate-400 mx-auto" />
-              <h3 className="mt-3 text-base font-semibold text-slate-900">
+              <h3 className="mt-3 text-base font-semibold text-white">
                 Pilih CU / Tajuk Khusus Terlebih Dahulu
               </h3>
-              <p className="mt-1.5 text-sm text-slate-600 max-w-md mx-auto">
-                Kandungan <span className="font-mono text-xs">TEORI/ (Sub 1 &amp; Sub 2)</span>, latihan Google Form,
-                dan panduan <span className="font-mono text-xs">AMALI/ (Sub 1 &amp; Sub 2)</span> akan dibuka selepas anda
+              <p className="mt-1.5 text-sm text-slate-300 max-w-md mx-auto">
+                Kandungan <span className="font-mono text-xs text-[#f0cb63]">TEORI/ (Sub 1 &amp; Sub 2)</span>, latihan Google Form,
+                dan panduan <span className="font-mono text-xs text-[#f0cb63]">AMALI/ (Sub 1 &amp; Sub 2)</span> akan dibuka selepas anda
                 memilih salah satu CU di sebelah kiri.
               </p>
             </div>
           ) : (
             <div className="space-y-6">
               {/* CU Header + 2-Sub Switcher */}
-              <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-5">
+              <div className="bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-6 space-y-5">
                 <div>
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 font-mono">
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400 font-mono">
                     <span>{activeLevel.code}</span>
                     <span aria-hidden="true">/</span>
                     <span>{activeCU.code}</span>
                     <span aria-hidden="true">/</span>
-                    <span className="text-[#0a2e6c] font-semibold">
+                    <span className="text-[#f0cb63] font-semibold">
                       {selectedSection === 'amali_sop'
                         ? `AMALI/${subFolderCode}/`
                         : selectedSection === 'latihan'
@@ -519,25 +519,25 @@ export function LearningWorkspace({
                         : `TEORI/${subFolderCode}/`}
                     </span>
                   </div>
-                  <h3 className="mt-2 text-xl font-bold text-slate-900">{activeCU.title}</h3>
+                  <h3 className="mt-2 text-xl font-bold text-white">{activeCU.title}</h3>
                   {activeCU.description && (
-                    <p className="mt-1.5 text-sm text-slate-600 leading-relaxed">{activeCU.description}</p>
+                    <p className="mt-1.5 text-sm text-slate-300 leading-relaxed">{activeCU.description}</p>
                   )}
                 </div>
 
                 {/* 2-Sub Selector */}
-                <div className="pt-4 border-t border-slate-200">
-                  <p className="text-xs font-medium text-slate-500 mb-2">
+                <div className="pt-4 border-t border-[#1a2f5c]">
+                  <p className="text-xs font-medium text-slate-400 mb-2">
                     Pilih Sub Bahagian ({selectedSection === 'amali_sop' ? 'Amali & SOP' : selectedSection === 'latihan' ? 'Latihan Teori' : 'Teori'})
                   </p>
-                  <div className="grid sm:grid-cols-2 gap-2 p-1 bg-slate-100 rounded-lg">
+                  <div className="grid sm:grid-cols-2 gap-2 p-1 bg-[#071024] border border-[#1a2f5c] rounded-lg">
                     <button
                       type="button"
                       onClick={() => setSelectedSub('sub1')}
                       className={`text-left px-3.5 py-2.5 rounded-md text-xs transition-colors ${
                         selectedSub === 'sub1'
-                          ? 'bg-white text-[#0a2e6c] font-semibold shadow-sm'
-                          : 'text-slate-600 hover:text-slate-900'
+                          ? 'bg-[#17356e] text-[#f0cb63] font-semibold shadow-sm'
+                          : 'text-slate-400 hover:text-slate-100'
                       }`}
                     >
                       <span className="block truncate">{sub1Label}</span>
@@ -547,8 +547,8 @@ export function LearningWorkspace({
                       onClick={() => setSelectedSub('sub2')}
                       className={`text-left px-3.5 py-2.5 rounded-md text-xs transition-colors ${
                         selectedSub === 'sub2'
-                          ? 'bg-white text-[#0a2e6c] font-semibold shadow-sm'
-                          : 'text-slate-600 hover:text-slate-900'
+                          ? 'bg-[#17356e] text-[#f0cb63] font-semibold shadow-sm'
+                          : 'text-slate-400 hover:text-slate-100'
                       }`}
                     >
                       <span className="block truncate">{sub2Label}</span>
@@ -594,17 +594,17 @@ export function LearningWorkspace({
 
               {/* SECTION: LATIHAN GOOGLE FORM (Sub 1 / Sub 2) */}
               {selectedSection === 'latihan' && (
-                <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-6">
+                <div className="bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-6 space-y-6">
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                     <div>
-                      <p className="text-xs font-mono text-slate-500">
+                      <p className="text-xs font-mono text-slate-400">
                         {activeLevel.code} / {activeCU.code} / TEORI / {subFolderCode} / Latihan_Google_Form
                       </p>
-                      <h4 className="mt-1.5 text-base font-semibold text-slate-900">
+                      <h4 className="mt-1.5 text-base font-semibold text-white">
                         {activeTeoriSub.googleFormTitle ||
                           `Latihan Teori ${selectedSub === 'sub1' ? 'Sub 1' : 'Sub 2'} — ${activeCU.code}`}
                       </h4>
-                      <p className="mt-1 text-sm text-slate-600">
+                      <p className="mt-1 text-sm text-slate-300">
                         {selectedSub === 'sub1' ? sub1Label : sub2Label} — Jawab latihan teori terus daripada paparan Google Form di dalam portal ini.
                       </p>
                     </div>
@@ -617,7 +617,7 @@ export function LearningWorkspace({
                         onClick={() =>
                           api.logAccess(token, activeCU.id, 'open_form', selectedSub).catch(() => {})
                         }
-                        className="px-4 py-2 text-xs font-medium text-white bg-[#0a2e6c] hover:bg-[#061b44] rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap shrink-0"
+                        className="px-4 py-2 text-xs font-semibold text-[#041434] bg-[#e5b94c] hover:bg-[#f0cb63] rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap shrink-0"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
                         <span>Buka Borang di Tab Baharu</span>
@@ -628,10 +628,10 @@ export function LearningWorkspace({
                   {canEdit && (
                     <form
                       onSubmit={handleSaveGoogleForm}
-                      className="p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-3"
+                      className="p-4 rounded-lg bg-[#071024] border border-[#1a2f5c] space-y-3"
                     >
-                      <div className="flex items-center gap-2 text-xs font-semibold text-slate-900">
-                        <Link2 className="w-4 h-4 text-[#0a2e6c]" />
+                      <div className="flex items-center gap-2 text-xs font-semibold text-white">
+                        <Link2 className="w-4 h-4 text-[#f0cb63]" />
                         <span>
                           Tetapan Pautan Google Form ({selectedSub === 'sub1' ? 'Sub 1' : 'Sub 2'})
                         </span>
@@ -640,7 +640,7 @@ export function LearningWorkspace({
                       {formMsg && (
                         <p
                           className={`text-xs ${
-                            formMsg.type === 'ok' ? 'text-emerald-700' : 'text-red-700'
+                            formMsg.type === 'ok' ? 'text-emerald-400' : 'text-red-400'
                           }`}
                         >
                           {formMsg.text}
@@ -649,17 +649,17 @@ export function LearningWorkspace({
 
                       <div className="grid sm:grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-xs text-slate-600 mb-1">Tajuk Latihan</label>
+                          <label className="block text-xs text-slate-300 mb-1">Tajuk Latihan</label>
                           <input
                             type="text"
                             value={formTitleInput}
                             onChange={(e) => setFormTitleInput(e.target.value)}
                             placeholder="Tajuk latihan Google Form"
-                            className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white"
+                            className="w-full px-3 py-2 text-xs border border-[#263f73] rounded-lg bg-[#0b1733] text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#e5b94c]"
                           />
                         </div>
                         <div>
-                          <label className="block text-xs text-slate-600 mb-1">
+                          <label className="block text-xs text-slate-300 mb-1">
                             Pautan Google Form (HTTPS)
                           </label>
                           <input
@@ -667,20 +667,20 @@ export function LearningWorkspace({
                             value={formUrlInput}
                             onChange={(e) => setFormUrlInput(e.target.value)}
                             placeholder="https://docs.google.com/forms/d/e/.../viewform"
-                            className="w-full px-3 py-2 text-xs font-mono border border-slate-300 rounded-lg bg-white"
+                            className="w-full px-3 py-2 text-xs font-mono border border-[#263f73] rounded-lg bg-[#0b1733] text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#e5b94c]"
                           />
                         </div>
                       </div>
 
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="text-xs text-slate-500">
-                          Gunakan pautan penuh <span className="font-mono">docs.google.com/forms/.../viewform</span>{' '}
+                        <p className="text-xs text-slate-400">
+                          Gunakan pautan penuh <span className="font-mono text-slate-300">docs.google.com/forms/.../viewform</span>{' '}
                           untuk paparan terus di dalam halaman. Kosongkan untuk memadam pautan.
                         </p>
                         <button
                           type="submit"
                           disabled={savingForm}
-                          className="px-3.5 py-2 text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 rounded-lg flex items-center gap-1.5 whitespace-nowrap"
+                          className="px-3.5 py-2 text-xs font-semibold text-[#041434] bg-[#e5b94c] hover:bg-[#f0cb63] rounded-lg flex items-center gap-1.5 whitespace-nowrap"
                         >
                           <Save className="w-3.5 h-3.5" />
                           <span>{savingForm ? 'Menyimpan...' : 'Simpan Pautan'}</span>
@@ -691,7 +691,7 @@ export function LearningWorkspace({
 
                   {activeTeoriSub.googleFormUrl ? (
                     <div className="space-y-4">
-                      <div className="border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
+                      <div className="border border-[#263f73] rounded-lg overflow-hidden bg-white">
                         <iframe
                           src={toEmbedGoogleFormUrl(activeTeoriSub.googleFormUrl)}
                           title={activeTeoriSub.googleFormTitle || activeCU.title}
@@ -700,8 +700,8 @@ export function LearningWorkspace({
                         />
                       </div>
 
-                      <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-200">
-                        <p className="text-xs text-slate-500">
+                      <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[#1a2f5c]">
+                        <p className="text-xs text-slate-400">
                           Jika paparan borang disekat oleh tetapan pelayar, gunakan butang &ldquo;Buka Borang di Tab Baharu&rdquo;.
                         </p>
                         <button
@@ -711,19 +711,19 @@ export function LearningWorkspace({
                             await onRefreshWorkspace();
                             setFormMsg({ type: 'ok', text: 'Akses latihan direkodkan.' });
                           }}
-                          className="px-3.5 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg whitespace-nowrap"
+                          className="px-3.5 py-2 text-xs font-medium text-slate-200 bg-[#102045] border border-[#263f73] hover:bg-[#172e61] rounded-lg whitespace-nowrap"
                         >
                           Sahkan &amp; Rekod Akses Latihan
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <div className="py-10 text-center border-t border-slate-200">
+                    <div className="py-10 text-center border-t border-[#1a2f5c]">
                       <ClipboardCheck className="w-7 h-7 text-slate-400 mx-auto" />
-                      <p className="mt-2.5 text-sm font-medium text-slate-900">
+                      <p className="mt-2.5 text-sm font-medium text-white">
                         Belum Ada Latihan Google Form ({selectedSub === 'sub1' ? 'Sub 1' : 'Sub 2'})
                       </p>
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-1 text-xs text-slate-400">
                         Pengajar atau Admin Website perlu memautkan borang Google Form untuk sub bahagian ini terlebih dahulu.
                       </p>
                     </div>
@@ -749,26 +749,26 @@ export function LearningWorkspace({
                     }
                   />
 
-                  <div className="bg-white border border-slate-200 rounded-xl p-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-200">
+                  <div className="bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[#1a2f5c]">
                       <div>
-                        <p className="text-xs font-mono text-slate-500">
+                        <p className="text-xs font-mono text-slate-400">
                           {activeLevel.code} / {activeCU.code} / AMALI / {subFolderCode} / Senarai_Semak_Keselamatan_SOP
                         </p>
-                        <h4 className="mt-1.5 text-base font-semibold text-slate-900">
+                        <h4 className="mt-1.5 text-base font-semibold text-white">
                           Senarai Semak SOP ({selectedSub === 'sub1' ? 'Sub 1' : 'Sub 2'}) · LOTO · PCD · PPE
                         </h4>
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-xs font-mono tabular-nums text-slate-600">
+                        <span className="text-xs font-mono tabular-nums text-slate-300">
                           {userSopChecked.length}/{activeAmaliSub.sopSteps.length} Disemak
                         </span>
                         {userSopChecked.length > 0 && !editingSop && (
                           <button
                             type="button"
                             onClick={handleResetSopChecks}
-                            className="px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 border border-slate-200 rounded-lg flex items-center gap-1"
+                            className="px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-[#071024] border border-[#263f73] rounded-lg flex items-center gap-1"
                           >
                             <RotateCcw className="w-3.5 h-3.5" />
                             <span>Set Semula</span>
@@ -781,7 +781,7 @@ export function LearningWorkspace({
                               setDraftSopSteps(activeAmaliSub.sopSteps);
                               setEditingSop(!editingSop);
                             }}
-                            className="px-3.5 py-1.5 text-xs font-medium text-[#0a2e6c] bg-[#eef3fb] hover:bg-[#dce6f7] rounded-lg whitespace-nowrap"
+                            className="px-3.5 py-1.5 text-xs font-medium text-[#f0cb63] bg-[#122652] hover:bg-[#1a356e] border border-[#264380] rounded-lg whitespace-nowrap"
                           >
                             {editingSop ? 'Batal Suntingan' : 'Urus Langkah SOP'}
                           </button>
@@ -793,8 +793,8 @@ export function LearningWorkspace({
                       <div
                         className={`mt-4 p-3 rounded-lg text-xs border ${
                           sopMsg.type === 'ok'
-                            ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                            : 'bg-red-50 border-red-200 text-red-800'
+                            ? 'bg-emerald-950/60 border-emerald-700/60 text-emerald-300'
+                            : 'bg-red-950/60 border-red-800/70 text-red-300'
                         }`}
                       >
                         {sopMsg.text}
@@ -806,14 +806,14 @@ export function LearningWorkspace({
                         {draftSopSteps.map((step, index) => (
                           <div
                             key={step.id}
-                            className="p-4 rounded-lg border border-slate-200 bg-slate-50 space-y-3"
+                            className="p-4 rounded-lg border border-[#1a2f5c] bg-[#071024] space-y-3"
                           >
                             <div className="flex flex-wrap items-center justify-between gap-2">
-                              <span className="text-xs font-mono font-semibold text-slate-700">
+                              <span className="text-xs font-mono font-semibold text-slate-200">
                                 Langkah #{index + 1}
                               </span>
                               <div className="flex items-center gap-3">
-                                <label className="flex items-center gap-1.5 text-xs text-slate-700">
+                                <label className="flex items-center gap-1.5 text-xs text-slate-300">
                                   <input
                                     type="checkbox"
                                     checked={step.critical}
@@ -830,7 +830,7 @@ export function LearningWorkspace({
                                   onClick={() =>
                                     setDraftSopSteps(draftSopSteps.filter((_, i) => i !== index))
                                   }
-                                  className="text-xs text-red-700 hover:text-red-900 flex items-center gap-1"
+                                  className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                   <span>Buang</span>
@@ -849,7 +849,7 @@ export function LearningWorkspace({
                                   };
                                   setDraftSopSteps(next);
                                 }}
-                                className="px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white"
+                                className="px-3 py-2 text-xs border border-[#263f73] rounded-lg bg-[#0b1733] text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#e5b94c]"
                               >
                                 <option value="LOTO">LOTO</option>
                                 <option value="PCD">PCD</option>
@@ -865,7 +865,7 @@ export function LearningWorkspace({
                                   setDraftSopSteps(next);
                                 }}
                                 placeholder="Tajuk langkah SOP"
-                                className="sm:col-span-2 px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white"
+                                className="sm:col-span-2 px-3 py-2 text-xs border border-[#263f73] rounded-lg bg-[#0b1733] text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#e5b94c]"
                               />
                             </div>
 
@@ -878,7 +878,7 @@ export function LearningWorkspace({
                                 setDraftSopSteps(next);
                               }}
                               placeholder="Arahan terperinci langkah kerja & keselamatan..."
-                              className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white"
+                              className="w-full px-3 py-2 text-xs border border-[#263f73] rounded-lg bg-[#0b1733] text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#e5b94c]"
                             />
                           </div>
                         ))}
@@ -898,7 +898,7 @@ export function LearningWorkspace({
                                 },
                               ])
                             }
-                            className="px-3.5 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg flex items-center gap-1.5"
+                            className="px-3.5 py-2 text-xs font-medium text-slate-200 bg-[#102045] border border-[#263f73] hover:bg-[#172e61] rounded-lg flex items-center gap-1.5"
                           >
                             <Plus className="w-3.5 h-3.5" />
                             <span>Tambah Langkah SOP</span>
@@ -908,7 +908,7 @@ export function LearningWorkspace({
                             type="button"
                             disabled={savingSop}
                             onClick={handleSaveSopSteps}
-                            className="px-4 py-2 text-xs font-medium text-white bg-[#0a2e6c] hover:bg-[#061b44] rounded-lg flex items-center gap-1.5"
+                            className="px-4 py-2 text-xs font-semibold text-[#041434] bg-[#e5b94c] hover:bg-[#f0cb63] rounded-lg flex items-center gap-1.5"
                           >
                             <Save className="w-3.5 h-3.5" />
                             <span>{savingSop ? 'Menyimpan...' : 'Simpan Senarai SOP'}</span>
@@ -918,12 +918,12 @@ export function LearningWorkspace({
                     ) : activeAmaliSub.sopSteps.length === 0 ? (
                       <div className="py-8 text-center">
                         <ShieldAlert className="w-7 h-7 text-slate-400 mx-auto" />
-                        <p className="mt-2 text-sm text-slate-600">
+                        <p className="mt-2 text-sm text-slate-300">
                           Belum ada langkah senarai semak SOP ditambah untuk {selectedSub === 'sub1' ? 'Sub 1' : 'Sub 2'} ini.
                         </p>
                       </div>
                     ) : (
-                      <div className="mt-4 divide-y divide-slate-200">
+                      <div className="mt-4 divide-y divide-[#1a2f5c]">
                         {activeAmaliSub.sopSteps.map((step, idx) => {
                           const checked = userSopChecked.includes(step.id);
                           return (
@@ -931,27 +931,27 @@ export function LearningWorkspace({
                               key={step.id}
                               type="button"
                               onClick={() => handleToggleSopStep(step.id)}
-                              className="w-full text-left py-4 flex items-start gap-3.5 hover:bg-slate-50/80 px-2 -mx-2 rounded-lg transition-colors"
+                              className="w-full text-left py-4 flex items-start gap-3.5 hover:bg-[#112247]/60 px-2 -mx-2 rounded-lg transition-colors"
                             >
-                              <div className="mt-0.5 shrink-0 text-[#0a2e6c]">
+                              <div className="mt-0.5 shrink-0 text-[#f0cb63]">
                                 {checked ? (
                                   <CheckSquare className="w-5 h-5" />
                                 ) : (
-                                  <Square className="w-5 h-5 text-slate-400" />
+                                  <Square className="w-5 h-5 text-slate-500" />
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex flex-wrap items-center gap-2 text-xs">
-                                  <span className="font-mono font-semibold text-slate-700 tabular-nums">
+                                  <span className="font-mono font-semibold text-slate-400 tabular-nums">
                                     0{idx + 1}.
                                   </span>
-                                  <span className="font-mono font-semibold text-[#0a2e6c]">
+                                  <span className="font-mono font-semibold text-[#f0cb63]">
                                     {step.category}
                                   </span>
                                   {step.critical && (
                                     <>
-                                      <span aria-hidden="true" className="text-slate-300">·</span>
-                                      <span className="inline-flex items-center gap-1 font-semibold text-amber-700">
+                                      <span aria-hidden="true" className="text-slate-600">·</span>
+                                      <span className="inline-flex items-center gap-1 font-semibold text-amber-400">
                                         <AlertTriangle className="w-3.5 h-3.5" />
                                         <span>WAJIB KESELAMATAN</span>
                                       </span>
@@ -960,12 +960,12 @@ export function LearningWorkspace({
                                 </div>
                                 <p
                                   className={`mt-1 text-sm font-semibold ${
-                                    checked ? 'line-through text-slate-500' : 'text-slate-900'
+                                    checked ? 'line-through text-slate-500' : 'text-white'
                                   }`}
                                 >
                                   {step.title}
                                 </p>
-                                <p className="mt-1 text-sm text-slate-600 leading-relaxed">
+                                <p className="mt-1 text-sm text-slate-300 leading-relaxed">
                                   {step.instruction}
                                 </p>
                               </div>

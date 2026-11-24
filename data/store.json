@@ -1,13 +1,35 @@
 {
   "adminEmail": "azwan26211121@gmail.com",
-  "adminPasswordHash": "bdf0cbe6df597c425c4659b76d551138:2c19bb3d8878b064515c49002e206d6a670778941be8b7b1b0acaa88ee86db7ecf9f7932039d68084e7a270f991e48d4728cefc591524da7075faeb1dd9bfa39",
+  "adminPasswordHash": "f9df440b7c641198366f8abb65de2349:369db7bc04d8a3059005721468355288a25709d7b2346b03eb4136c9497e82fb0707809b4d0b40f13d6e5008b6a3658570aea62165e2b6a862c2635bf4137ec0",
   "branding": {
     "portalName": "SIRKING Learning Portal",
     "portalTagline": "Your Gateway to Knowledge & Success",
+    "heroHeadline": "Platform Panduan Pembelajaran, Latihan Teori & SOP Latihan",
+    "feature1Title": "01. Folder Teori & Nota",
+    "feature1Desc": "Setiap tahap dibahagikan kepada 2 Sub Teori dengan slot Word dan PDF mengikut CU.",
+    "feature2Title": "02. Latihan Google Form",
+    "feature2Desc": "Akses borang latihan teori secara terus di dalam portal tanpa mencari pautan luaran.",
+    "feature3Title": "03. SOP Bengkel Amali",
+    "feature3Desc": "2 Sub Amali dengan langkah kerja, peraturan LOTO, PCD, PPE dan senarai semak amali.",
+    "authGateTitle": "Gerbang Akses Portal",
+    "authGateSubtitle": "Log masuk untuk Pelatih dan Pengajar menggunakan User ID serta PIN akses 6 digit.",
+    "welcomePrefix": "Selamat Datang",
+    "footerCaption": "Imbas QR Pembayaran atau QR WhatsApp rasmi di bawah portal",
+    "pendingTitle": "Menunggu Kelulusan Pengajar",
+    "pendingMessage": "Pendaftaran akaun anda telah direkodkan. Kandungan nota, latihan Google Form, dan SOP bengkel akan dibuka sebaik sahaja pengajar penyelia meluluskan akaun anda.",
     "customLogoStoredName": null,
     "customLogoMimeType": null,
     "customBannerStoredName": null,
     "customBannerMimeType": null,
+    "paymentQrStoredName": null,
+    "paymentQrMimeType": null,
+    "paymentQrTitle": "QR Pembayaran",
+    "paymentQrNote": "Imbas QR untuk bayaran rasmi portal.",
+    "whatsappQrStoredName": null,
+    "whatsappQrMimeType": null,
+    "whatsappQrTitle": "QR WhatsApp",
+    "whatsappQrNote": "Imbas QR untuk hubungi kami di WhatsApp.",
+    "whatsappUrl": "",
     "updatedAt": "2026-11-24T04:23:38.627Z"
   },
   "users": [
@@ -21,8 +43,8 @@
       "requestedLevelId": null,
       "approvedLevelId": null,
       "createdAt": "2026-11-24T03:47:55.962Z",
-      "updatedAt": "2026-11-24T03:47:55.962Z",
-      "userId": "master_admin"
+      "updatedAt": "2026-11-24T05:06:45.462Z",
+      "userId": "Master_admin"
     },
     {
       "id": "admin-1",
@@ -319,16 +341,5 @@
   ],
   "sopProgress": [],
   "accessLogs": [],
-  "sessions": [
-    {
-      "tokenHash": "371ef10abf369eedac6a0cb02e04b7af82ef8839507b54b2b8d8d5b7019c8697",
-      "userId": "admin-root",
-      "expiresAt": 1796097722359
-    },
-    {
-      "tokenHash": "231de4a8869cef6043996206b05c37c68816e5929f6ae55a491c20942af99ab0",
-      "userId": "admin-root",
-      "expiresAt": 1796098952914
-    }
-  ]
+  "sessions": []
 }

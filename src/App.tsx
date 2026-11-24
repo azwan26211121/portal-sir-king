@@ -4,6 +4,7 @@ import { AdminPanelView } from './components/AdminPanelView.tsx';
 import { AuthGate } from './components/AuthGate.tsx';
 import { LearningWorkspace } from './components/LearningWorkspace.tsx';
 import { PendingApprovalView } from './components/PendingApprovalView.tsx';
+import { PortalQrFooter } from './components/PortalQrFooter.tsx';
 import { SearchAndTrackingView } from './components/SearchAndTrackingView.tsx';
 import { TraineeManagementView } from './components/TraineeManagementView.tsx';
 import { api, ApiError } from './lib/api.ts';
@@ -29,10 +30,37 @@ const ROLE_LABELS: Record<PublicUser['role'], string> = {
 const DEFAULT_BRANDING: BrandingConfig = {
   portalName: 'SIRKING Learning Portal',
   portalTagline: 'Your Gateway to Knowledge & Success',
+  heroHeadline: 'Platform Panduan Pembelajaran, Latihan Teori & SOP Latihan',
+  feature1Title: '01. Folder Teori & Nota',
+  feature1Desc:
+    'Setiap tahap dibahagikan kepada 2 Sub Teori dengan slot Word dan PDF mengikut CU.',
+  feature2Title: '02. Latihan Google Form',
+  feature2Desc:
+    'Akses borang latihan teori secara terus di dalam portal tanpa mencari pautan luaran.',
+  feature3Title: '03. SOP Bengkel Amali',
+  feature3Desc:
+    '2 Sub Amali dengan langkah kerja, peraturan LOTO, PCD, PPE dan senarai semak amali.',
+  authGateTitle: 'Gerbang Akses Portal',
+  authGateSubtitle:
+    'Log masuk untuk Pelatih dan Pengajar menggunakan User ID serta PIN akses 6 digit.',
+  welcomePrefix: 'Selamat Datang',
+  footerCaption: 'Imbas QR Pembayaran atau QR WhatsApp rasmi di bawah portal',
+  pendingTitle: 'Menunggu Kelulusan Pengajar',
+  pendingMessage:
+    'Pendaftaran akaun anda telah direkodkan. Kandungan nota, latihan Google Form, dan SOP bengkel akan dibuka sebaik sahaja pengajar penyelia meluluskan akaun anda.',
   logoUrl: '/assets/aistudio/logo_sir_king_portal_93f80572.jpeg',
-  bannerUrl: '/assets/aistudio/banner_sir_king_portal_d2267840.jpeg',
+  bannerUrl: '/assets/sirking_banner_full.jpeg',
   hasCustomLogo: false,
   hasCustomBanner: false,
+  paymentQrUrl: null,
+  hasPaymentQr: false,
+  paymentQrTitle: 'QR Pembayaran',
+  paymentQrNote: 'Imbas QR untuk bayaran rasmi portal.',
+  whatsappQrUrl: null,
+  hasWhatsappQr: false,
+  whatsappQrTitle: 'QR WhatsApp',
+  whatsappQrNote: 'Imbas QR untuk hubungi kami di WhatsApp.',
+  whatsappUrl: '',
   updatedAt: '',
 };
 
@@ -179,9 +207,9 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f7fb] flex flex-col">
+    <div className="min-h-screen bg-[#060d1f] text-slate-100 flex flex-col">
       {/* Top Bar: 3-zone contract styled to match SIRKING Royal Navy & Gold Banner */}
-      <header className="bg-[#061b44] border-b border-[#16428e]/50 px-6 py-3.5 sticky top-0 z-30">
+      <header className="bg-[#041029]/95 backdrop-blur border-b border-[#1c366b] px-6 py-3.5 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-8">
           {/* Zone 1: Brand Wordmark + Crest Logo */}
           <button
@@ -220,7 +248,7 @@ export default function App() {
                   className={`py-1 transition-colors whitespace-nowrap shrink-0 border-b-2 ${
                     active
                       ? 'text-white border-[#e5b94c]'
-                      : 'text-blue-100/75 border-transparent hover:text-white'
+                      : 'text-slate-300 border-transparent hover:text-white'
                   }`}
                 >
                   {link.label}
@@ -234,7 +262,7 @@ export default function App() {
             <button
               type="button"
               onClick={handleLogout}
-              className="px-4 py-2 text-xs font-semibold text-[#041434] bg-[#e5b94c] rounded-lg hover:bg-[#d4af37] transition-colors whitespace-nowrap shrink-0 inline-flex items-center gap-2"
+              className="px-4 py-2 text-xs font-semibold text-[#041434] bg-[#e5b94c] rounded-lg hover:bg-[#f0cb63] transition-colors whitespace-nowrap shrink-0 inline-flex items-center gap-2"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span>Log Keluar</span>
@@ -255,7 +283,7 @@ export default function App() {
                 type="button"
                 onClick={() => setNavTab(link.id)}
                 className={`py-1 whitespace-nowrap shrink-0 border-b-2 ${
-                  active ? 'text-white border-[#e5b94c]' : 'text-blue-100/75 border-transparent'
+                  active ? 'text-white border-[#e5b94c]' : 'text-slate-300 border-transparent'
                 }`}
               >
                 {link.label}
@@ -267,36 +295,36 @@ export default function App() {
 
       {/* Main Content */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-8 space-y-6">
-        {/* Portal Banner Showcase */}
+        {/* Portal Banner Showcase — Full-bleed edge-to-edge, zero white space */}
         {navTab === 'workspace' && (
-          <div className="bg-white border border-slate-200 rounded-xl p-2 shadow-sm overflow-hidden">
+          <div className="border border-[#264380] bg-[#041029] rounded-2xl shadow-2xl overflow-hidden">
             {!bannerFailed ? (
               <img
                 src={branding.bannerUrl}
                 alt={`Banner ${branding.portalName}`}
                 referrerPolicy="no-referrer"
                 onError={() => setBannerFailed(true)}
-                className="w-full h-auto max-h-48 object-contain mx-auto rounded-lg"
+                className="w-full aspect-[1408/388] min-h-[180px] sm:min-h-[230px] lg:min-h-[270px] object-cover object-center block"
               />
             ) : (
-              <div className="h-32 rounded-lg bg-gradient-to-r from-[#041434] via-[#072255] to-[#0b3d86] flex flex-col items-center justify-center px-6 text-center">
-                <p className="text-xl font-bold text-white tracking-tight">{branding.portalName}</p>
-                <p className="text-xs text-[#f0cb63] mt-1">{branding.portalTagline}</p>
+              <div className="h-44 sm:h-56 bg-gradient-to-r from-[#041434] via-[#072255] to-[#0b3d86] flex flex-col items-center justify-center px-6 text-center">
+                <p className="text-2xl font-bold text-white tracking-tight">{branding.portalName}</p>
+                <p className="text-sm text-[#f0cb63] mt-1">{branding.portalTagline}</p>
               </div>
             )}
           </div>
         )}
 
         {/* Contextual User Session Summary Bar (Clean unboxed metadata) */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-200">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-[#1a2f5c]">
           <div>
-            <h1 className="text-xl font-bold text-[#061b44] tracking-tight">
-              Selamat Datang, {user.name}
+            <h1 className="text-xl font-bold text-white tracking-tight">
+              {branding.welcomePrefix}, {user.name}
             </h1>
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-              <span className="font-medium text-[#0a2e6c]">{ROLE_LABELS[user.role]}</span>
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+              <span className="font-semibold text-[#f0cb63]">{ROLE_LABELS[user.role]}</span>
               <span aria-hidden="true">·</span>
-              <span className="font-mono text-slate-700">ID: {user.userId}</span>
+              <span className="font-mono text-slate-200">ID: {user.userId}</span>
               <span aria-hidden="true">·</span>
               <span>Status: Diluluskan</span>
               {user.role === 'pelatih' && user.supervisorName && (
@@ -310,13 +338,13 @@ export default function App() {
         </div>
 
         {workspaceError && (
-          <div role="alert" className="p-4 rounded-xl border border-red-200 bg-red-50 text-sm text-red-800">
+          <div role="alert" className="p-4 rounded-xl border border-red-800/70 bg-red-950/60 text-sm text-red-300">
             {workspaceError}
           </div>
         )}
 
         {loadingWorkspace && levels.length === 0 ? (
-          <div className="bg-white border border-slate-200 rounded-xl p-10 text-center text-sm text-slate-500">
+          <div className="bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-10 text-center text-sm text-slate-400">
             Memuatkan ruang kerja pembelajaran...
           </div>
         ) : (
@@ -372,6 +400,13 @@ export default function App() {
           </>
         )}
       </main>
+
+      <PortalQrFooter
+        branding={branding}
+        canEdit={user.role === 'admin' || user.role === 'master_admin'}
+        token={token}
+        onBrandingUpdated={setBranding}
+      />
     </div>
   );
 }

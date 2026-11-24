@@ -39,10 +39,32 @@ export interface SessionRecord {
 export interface StoredBranding {
   portalName: string;
   portalTagline: string;
+  heroHeadline: string;
+  feature1Title: string;
+  feature1Desc: string;
+  feature2Title: string;
+  feature2Desc: string;
+  feature3Title: string;
+  feature3Desc: string;
+  authGateTitle: string;
+  authGateSubtitle: string;
+  welcomePrefix: string;
+  footerCaption: string;
+  pendingTitle: string;
+  pendingMessage: string;
   customLogoStoredName: string | null;
   customLogoMimeType: string | null;
   customBannerStoredName: string | null;
   customBannerMimeType: string | null;
+  paymentQrStoredName: string | null;
+  paymentQrMimeType: string | null;
+  paymentQrTitle: string;
+  paymentQrNote: string;
+  whatsappQrStoredName: string | null;
+  whatsappQrMimeType: string | null;
+  whatsappQrTitle: string;
+  whatsappQrNote: string;
+  whatsappUrl: string;
   updatedAt: string;
 }
 
@@ -61,8 +83,32 @@ export interface AppStore {
 export const ADMIN_EMAIL = 'azwan26211121@gmail.com';
 export const DEFAULT_PORTAL_NAME = 'SIRKING Learning Portal';
 export const DEFAULT_PORTAL_TAGLINE = 'Your Gateway to Knowledge & Success';
+export const DEFAULT_BRANDING_TEXTS = {
+  heroHeadline: 'Platform Panduan Pembelajaran, Latihan Teori & SOP Latihan',
+  feature1Title: '01. Folder Teori & Nota',
+  feature1Desc:
+    'Setiap tahap dibahagikan kepada 2 Sub Teori dengan slot Word dan PDF mengikut CU.',
+  feature2Title: '02. Latihan Google Form',
+  feature2Desc:
+    'Akses borang latihan teori secara terus di dalam portal tanpa mencari pautan luaran.',
+  feature3Title: '03. SOP Bengkel Amali',
+  feature3Desc:
+    '2 Sub Amali dengan langkah kerja, peraturan LOTO, PCD, PPE dan senarai semak amali.',
+  authGateTitle: 'Gerbang Akses Portal',
+  authGateSubtitle:
+    'Log masuk untuk Pelatih dan Pengajar menggunakan User ID serta PIN akses 6 digit.',
+  welcomePrefix: 'Selamat Datang',
+  footerCaption: 'Imbas QR Pembayaran atau QR WhatsApp rasmi di bawah portal',
+  pendingTitle: 'Menunggu Kelulusan Pengajar',
+  pendingMessage:
+    'Pendaftaran akaun anda telah direkodkan. Kandungan nota, latihan Google Form, dan SOP bengkel akan dibuka sebaik sahaja pengajar penyelia meluluskan akaun anda.',
+};
 export const DEFAULT_LOGO_URL = '/assets/aistudio/logo_sir_king_portal_93f80572.jpeg';
-export const DEFAULT_BANNER_URL = '/assets/aistudio/banner_sir_king_portal_d2267840.jpeg';
+export const DEFAULT_BANNER_URL = '/assets/sirking_banner_full.jpeg';
+export const DEFAULT_PAYMENT_QR_TITLE = 'QR Pembayaran';
+export const DEFAULT_PAYMENT_QR_NOTE = 'Imbas QR untuk bayaran rasmi portal.';
+export const DEFAULT_WHATSAPP_QR_TITLE = 'QR WhatsApp';
+export const DEFAULT_WHATSAPP_QR_NOTE = 'Imbas QR untuk hubungi kami di WhatsApp.';
 export const DATA_DIR = path.resolve(process.cwd(), 'data');
 export const UPLOADS_DIR = path.resolve(process.cwd(), 'uploads');
 const STORE_PATH = path.resolve(DATA_DIR, 'store.json');
@@ -411,7 +457,7 @@ function createInitialData(): AppStore {
   const users: StoredUser[] = [
     {
       id: 'admin-root',
-      userId: 'master_admin',
+      userId: 'Master_admin',
       name: 'Master Admin',
       email: ADMIN_EMAIL,
       role: 'master_admin',
@@ -456,10 +502,20 @@ function createInitialData(): AppStore {
     branding: {
       portalName: DEFAULT_PORTAL_NAME,
       portalTagline: DEFAULT_PORTAL_TAGLINE,
+      ...DEFAULT_BRANDING_TEXTS,
       customLogoStoredName: null,
       customLogoMimeType: null,
       customBannerStoredName: null,
       customBannerMimeType: null,
+      paymentQrStoredName: null,
+      paymentQrMimeType: null,
+      paymentQrTitle: DEFAULT_PAYMENT_QR_TITLE,
+      paymentQrNote: DEFAULT_PAYMENT_QR_NOTE,
+      whatsappQrStoredName: null,
+      whatsappQrMimeType: null,
+      whatsappQrTitle: DEFAULT_WHATSAPP_QR_TITLE,
+      whatsappQrNote: DEFAULT_WHATSAPP_QR_NOTE,
+      whatsappUrl: '',
       updatedAt: now,
     },
     users,
@@ -553,7 +609,7 @@ function normalizeStore(raw: Record<string, unknown>): { store: AppStore; migrat
       return {
         ...record,
         role: 'master_admin' as const,
-        userId: 'master_admin',
+        userId: 'Master_admin',
         name: record.name === 'Admin Website' ? 'Master Admin' : record.name,
       };
     }
@@ -561,7 +617,7 @@ function normalizeStore(raw: Record<string, unknown>): { store: AppStore; migrat
       migrated = true;
       const fallback =
         record.role === 'master_admin'
-          ? 'master_admin'
+          ? 'Master_admin'
           : record.name
               .trim()
               .toLowerCase()
@@ -578,7 +634,7 @@ function normalizeStore(raw: Record<string, unknown>): { store: AppStore; migrat
     migrated = true;
     users.unshift({
       id: 'admin-root',
-      userId: 'master_admin',
+      userId: 'Master_admin',
       name: 'Master Admin',
       email: ADMIN_EMAIL,
       role: 'master_admin',
@@ -625,20 +681,69 @@ function normalizeStore(raw: Record<string, unknown>): { store: AppStore; migrat
     branding = {
       portalName: DEFAULT_PORTAL_NAME,
       portalTagline: DEFAULT_PORTAL_TAGLINE,
+      ...DEFAULT_BRANDING_TEXTS,
       customLogoStoredName: null,
       customLogoMimeType: null,
       customBannerStoredName: null,
       customBannerMimeType: null,
+      paymentQrStoredName: null,
+      paymentQrMimeType: null,
+      paymentQrTitle: DEFAULT_PAYMENT_QR_TITLE,
+      paymentQrNote: DEFAULT_PAYMENT_QR_NOTE,
+      whatsappQrStoredName: null,
+      whatsappQrMimeType: null,
+      whatsappQrTitle: DEFAULT_WHATSAPP_QR_TITLE,
+      whatsappQrNote: DEFAULT_WHATSAPP_QR_NOTE,
+      whatsappUrl: '',
       updatedAt: nowIso,
     };
   } else {
+    if (
+      base.branding.paymentQrStoredName === undefined ||
+      base.branding.paymentQrTitle === undefined ||
+      base.branding.paymentQrNote === undefined ||
+      base.branding.whatsappQrStoredName === undefined ||
+      base.branding.whatsappQrTitle === undefined ||
+      base.branding.whatsappQrNote === undefined ||
+      base.branding.whatsappUrl === undefined ||
+      base.branding.heroHeadline === undefined ||
+      base.branding.feature1Title === undefined ||
+      base.branding.authGateTitle === undefined ||
+      base.branding.welcomePrefix === undefined ||
+      base.branding.footerCaption === undefined ||
+      base.branding.pendingTitle === undefined
+    ) {
+      migrated = true;
+    }
     branding = {
       portalName: base.branding.portalName || DEFAULT_PORTAL_NAME,
       portalTagline: base.branding.portalTagline || DEFAULT_PORTAL_TAGLINE,
+      heroHeadline: base.branding.heroHeadline || DEFAULT_BRANDING_TEXTS.heroHeadline,
+      feature1Title: base.branding.feature1Title || DEFAULT_BRANDING_TEXTS.feature1Title,
+      feature1Desc: base.branding.feature1Desc || DEFAULT_BRANDING_TEXTS.feature1Desc,
+      feature2Title: base.branding.feature2Title || DEFAULT_BRANDING_TEXTS.feature2Title,
+      feature2Desc: base.branding.feature2Desc || DEFAULT_BRANDING_TEXTS.feature2Desc,
+      feature3Title: base.branding.feature3Title || DEFAULT_BRANDING_TEXTS.feature3Title,
+      feature3Desc: base.branding.feature3Desc || DEFAULT_BRANDING_TEXTS.feature3Desc,
+      authGateTitle: base.branding.authGateTitle || DEFAULT_BRANDING_TEXTS.authGateTitle,
+      authGateSubtitle: base.branding.authGateSubtitle || DEFAULT_BRANDING_TEXTS.authGateSubtitle,
+      welcomePrefix: base.branding.welcomePrefix || DEFAULT_BRANDING_TEXTS.welcomePrefix,
+      footerCaption: base.branding.footerCaption || DEFAULT_BRANDING_TEXTS.footerCaption,
+      pendingTitle: base.branding.pendingTitle || DEFAULT_BRANDING_TEXTS.pendingTitle,
+      pendingMessage: base.branding.pendingMessage || DEFAULT_BRANDING_TEXTS.pendingMessage,
       customLogoStoredName: base.branding.customLogoStoredName ?? null,
       customLogoMimeType: base.branding.customLogoMimeType ?? null,
       customBannerStoredName: base.branding.customBannerStoredName ?? null,
       customBannerMimeType: base.branding.customBannerMimeType ?? null,
+      paymentQrStoredName: base.branding.paymentQrStoredName ?? null,
+      paymentQrMimeType: base.branding.paymentQrMimeType ?? null,
+      paymentQrTitle: base.branding.paymentQrTitle || DEFAULT_PAYMENT_QR_TITLE,
+      paymentQrNote: base.branding.paymentQrNote ?? DEFAULT_PAYMENT_QR_NOTE,
+      whatsappQrStoredName: base.branding.whatsappQrStoredName ?? null,
+      whatsappQrMimeType: base.branding.whatsappQrMimeType ?? null,
+      whatsappQrTitle: base.branding.whatsappQrTitle || DEFAULT_WHATSAPP_QR_TITLE,
+      whatsappQrNote: base.branding.whatsappQrNote ?? DEFAULT_WHATSAPP_QR_NOTE,
+      whatsappUrl: base.branding.whatsappUrl ?? '',
       updatedAt: base.branding.updatedAt || nowIso,
     };
   }
@@ -713,13 +818,37 @@ export function toPublicBranding(store: AppStore): BrandingConfig {
   const ver = encodeURIComponent(store.branding.updatedAt);
   const hasCustomLogo = Boolean(store.branding.customLogoStoredName);
   const hasCustomBanner = Boolean(store.branding.customBannerStoredName);
+  const hasPaymentQr = Boolean(store.branding.paymentQrStoredName);
+  const hasWhatsappQr = Boolean(store.branding.whatsappQrStoredName);
   return {
     portalName: store.branding.portalName,
     portalTagline: store.branding.portalTagline,
+    heroHeadline: store.branding.heroHeadline || DEFAULT_BRANDING_TEXTS.heroHeadline,
+    feature1Title: store.branding.feature1Title || DEFAULT_BRANDING_TEXTS.feature1Title,
+    feature1Desc: store.branding.feature1Desc || DEFAULT_BRANDING_TEXTS.feature1Desc,
+    feature2Title: store.branding.feature2Title || DEFAULT_BRANDING_TEXTS.feature2Title,
+    feature2Desc: store.branding.feature2Desc || DEFAULT_BRANDING_TEXTS.feature2Desc,
+    feature3Title: store.branding.feature3Title || DEFAULT_BRANDING_TEXTS.feature3Title,
+    feature3Desc: store.branding.feature3Desc || DEFAULT_BRANDING_TEXTS.feature3Desc,
+    authGateTitle: store.branding.authGateTitle || DEFAULT_BRANDING_TEXTS.authGateTitle,
+    authGateSubtitle: store.branding.authGateSubtitle || DEFAULT_BRANDING_TEXTS.authGateSubtitle,
+    welcomePrefix: store.branding.welcomePrefix || DEFAULT_BRANDING_TEXTS.welcomePrefix,
+    footerCaption: store.branding.footerCaption || DEFAULT_BRANDING_TEXTS.footerCaption,
+    pendingTitle: store.branding.pendingTitle || DEFAULT_BRANDING_TEXTS.pendingTitle,
+    pendingMessage: store.branding.pendingMessage || DEFAULT_BRANDING_TEXTS.pendingMessage,
     logoUrl: hasCustomLogo ? `/api/branding/logo?v=${ver}` : DEFAULT_LOGO_URL,
     bannerUrl: hasCustomBanner ? `/api/branding/banner?v=${ver}` : DEFAULT_BANNER_URL,
     hasCustomLogo,
     hasCustomBanner,
+    paymentQrUrl: hasPaymentQr ? `/api/branding/payment-qr?v=${ver}` : null,
+    hasPaymentQr,
+    paymentQrTitle: store.branding.paymentQrTitle || DEFAULT_PAYMENT_QR_TITLE,
+    paymentQrNote: store.branding.paymentQrNote ?? DEFAULT_PAYMENT_QR_NOTE,
+    whatsappQrUrl: hasWhatsappQr ? `/api/branding/whatsapp-qr?v=${ver}` : null,
+    hasWhatsappQr,
+    whatsappQrTitle: store.branding.whatsappQrTitle || DEFAULT_WHATSAPP_QR_TITLE,
+    whatsappQrNote: store.branding.whatsappQrNote ?? DEFAULT_WHATSAPP_QR_NOTE,
+    whatsappUrl: store.branding.whatsappUrl ?? '',
     updatedAt: store.branding.updatedAt,
   };
 }

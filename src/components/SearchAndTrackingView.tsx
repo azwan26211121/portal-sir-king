@@ -84,18 +84,18 @@ export function SearchAndTrackingView({
 
   return (
     <div className="space-y-6">
-      <section className="bg-white border border-slate-200 rounded-xl p-6">
+      <section className="bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">
+            <h2 className="text-lg font-bold text-white">
               Carian Pantas Bahan &amp; Penjejakan Akses
             </h2>
-            <p className="mt-1 text-sm text-slate-600">
+            <p className="mt-1 text-sm text-slate-300">
               Cari tajuk CU, dokumen Word/PDF, pautan Google Form, dan langkah SOP merentas Sub 1 &amp; Sub 2 bagi Teori dan Amali.
             </p>
           </div>
 
-          <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg self-start">
+          <div className="flex items-center gap-1 p-1 bg-[#071024] border border-[#1a2f5c] rounded-lg self-start">
             {(
               [
                 { id: 'all', label: 'Semua CU' },
@@ -109,8 +109,8 @@ export function SearchAndTrackingView({
                 onClick={() => setFilterMode(tab.id)}
                 className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
                   filterMode === tab.id
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-[#17356e] text-[#f0cb63] shadow-sm font-semibold'
+                    : 'text-slate-300 hover:text-white'
                 }`}
               >
                 {tab.label}
@@ -126,14 +126,14 @@ export function SearchAndTrackingView({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Cari kod CU, tajuk modul, nama fail .pdf/.docx, Google Form, atau langkah LOTO/PCD/PPE..."
-            className="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0a2e6c]"
+            className="w-full pl-10 pr-4 py-2.5 text-sm bg-[#071024] text-slate-100 placeholder:text-slate-500 border border-[#263f73] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e5b94c]"
           />
         </div>
 
         <div className="mt-6 overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-200 text-xs font-semibold text-slate-500">
+              <tr className="border-b border-[#1a2f5c] text-xs font-semibold text-slate-400">
                 <th className="py-3 pr-4">Tahap &amp; CU</th>
                 <th className="py-3 px-3">TEORI Sub 1</th>
                 <th className="py-3 px-3">TEORI Sub 2</th>
@@ -142,10 +142,10 @@ export function SearchAndTrackingView({
                 <th className="py-3 pl-3 text-right">Akses</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 text-sm">
+            <tbody className="divide-y divide-[#1a2f5c] text-sm">
               {filteredCUs.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-sm text-slate-500">
+                  <td colSpan={6} className="py-8 text-center text-sm text-slate-400">
                     Tiada rekod CU sepadan dengan carian anda.
                   </td>
                 </tr>
@@ -161,12 +161,12 @@ export function SearchAndTrackingView({
                   const amaliDocs =
                     (cu.amaliSub1.sopDocSlot ? 1 : 0) + (cu.amaliSub2.sopDocSlot ? 1 : 0);
                   return (
-                    <tr key={cu.id} className="hover:bg-slate-50/70">
+                    <tr key={cu.id} className="hover:bg-[#112247]/60">
                       <td className="py-3.5 pr-4">
-                        <p className="text-xs font-mono text-slate-500">
+                        <p className="text-xs font-mono text-slate-400">
                           {lvl?.code || '-'} · {cu.code}
                         </p>
-                        <p className="font-medium text-slate-900">{cu.title}</p>
+                        <p className="font-medium text-white">{cu.title}</p>
                       </td>
                       <td className="py-3.5 px-3 text-xs font-mono tabular-nums">
                         <button
@@ -174,7 +174,7 @@ export function SearchAndTrackingView({
                           onClick={() => onNavigateToCu(cu.levelId, 'teori', cu.id)}
                           className={
                             sub1Docs > 0
-                              ? 'text-emerald-700 hover:underline font-medium'
+                              ? 'text-emerald-400 hover:underline font-medium'
                               : 'text-slate-400 hover:underline'
                           }
                         >
@@ -187,7 +187,7 @@ export function SearchAndTrackingView({
                           onClick={() => onNavigateToCu(cu.levelId, 'teori', cu.id)}
                           className={
                             sub2Docs > 0
-                              ? 'text-emerald-700 hover:underline font-medium'
+                              ? 'text-emerald-400 hover:underline font-medium'
                               : 'text-slate-400 hover:underline'
                           }
                         >
@@ -200,7 +200,7 @@ export function SearchAndTrackingView({
                           onClick={() => onNavigateToCu(cu.levelId, 'latihan', cu.id)}
                           className={
                             formsCount > 0
-                              ? 'text-[#0a2e6c] hover:underline font-medium'
+                              ? 'text-[#f0cb63] hover:underline font-medium'
                               : 'text-slate-400 hover:underline'
                           }
                         >
@@ -211,7 +211,7 @@ export function SearchAndTrackingView({
                         <button
                           type="button"
                           onClick={() => onNavigateToCu(cu.levelId, 'amali_sop', cu.id)}
-                          className="text-slate-700 hover:text-[#0a2e6c] hover:underline"
+                          className="text-slate-300 hover:text-[#f0cb63] hover:underline"
                         >
                           {amaliDocs}/2 Dok · {cu.amaliSub1.sopSteps.length}+{cu.amaliSub2.sopSteps.length} Langkah
                         </button>
@@ -220,7 +220,7 @@ export function SearchAndTrackingView({
                         <button
                           type="button"
                           onClick={() => onNavigateToCu(cu.levelId, 'teori', cu.id)}
-                          className="inline-flex items-center gap-1 text-xs font-medium text-[#0a2e6c] hover:text-[#061b44] whitespace-nowrap"
+                          className="inline-flex items-center gap-1 text-xs font-medium text-[#f0cb63] hover:text-white whitespace-nowrap"
                         >
                           <span>Buka</span>
                           <ArrowRight className="w-3.5 h-3.5" />
@@ -235,47 +235,47 @@ export function SearchAndTrackingView({
         </div>
       </section>
 
-      <section className="bg-white border border-slate-200 rounded-xl p-6">
-        <h3 className="text-base font-bold text-slate-900">Rekod Penjejakan Akses Terkini</h3>
-        <p className="mt-1 text-xs text-slate-500">
+      <section className="bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-6">
+        <h3 className="text-base font-bold text-white">Rekod Penjejakan Akses Terkini</h3>
+        <p className="mt-1 text-xs text-slate-400">
           Memaparkan aktiviti semakan nota Word/PDF, akses Google Form, dan semakan SOP bengkel.
         </p>
 
         <div className="mt-4 overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-200 text-xs font-semibold text-slate-500">
+              <tr className="border-b border-[#1a2f5c] text-xs font-semibold text-slate-400">
                 <th className="py-2.5 pr-4">Masa</th>
                 <th className="py-2.5 px-3">Pengguna</th>
                 <th className="py-2.5 px-3">Unit Kompetensi</th>
                 <th className="py-2.5 pl-3">Aktiviti</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 text-xs">
+            <tbody className="divide-y divide-[#1a2f5c] text-xs">
               {recentLogs.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="py-6 text-center text-slate-500">
+                  <td colSpan={4} className="py-6 text-center text-slate-400">
                     Belum ada aktiviti akses direkodkan lagi.
                   </td>
                 </tr>
               ) : (
                 recentLogs.map((log) => (
-                  <tr key={log.id} className="hover:bg-slate-50/60">
-                    <td className="py-2.5 pr-4 font-mono tabular-nums text-slate-500 whitespace-nowrap">
+                  <tr key={log.id} className="hover:bg-[#112247]/60">
+                    <td className="py-2.5 pr-4 font-mono tabular-nums text-slate-400 whitespace-nowrap">
                       {new Date(log.timestamp).toLocaleString('ms-MY')}
                     </td>
-                    <td className="py-2.5 px-3 font-medium text-slate-900">
+                    <td className="py-2.5 px-3 font-medium text-white">
                       {log.userName} <span className="text-slate-400">({log.userRole})</span>
                     </td>
-                    <td className="py-2.5 px-3 text-slate-700">
-                      <span className="font-mono text-[#0a2e6c]">{log.cuCode}</span> · {log.cuTitle}
+                    <td className="py-2.5 px-3 text-slate-300">
+                      <span className="font-mono text-[#f0cb63]">{log.cuCode}</span> · {log.cuTitle}
                       {log.subKey && (
                         <span className="ml-1.5 font-mono text-slate-400">
                           ({log.subKey === 'sub1' ? 'Sub 1' : 'Sub 2'})
                         </span>
                       )}
                     </td>
-                    <td className="py-2.5 pl-3 text-slate-700">{ACTION_LABELS[log.action]}</td>
+                    <td className="py-2.5 pl-3 text-slate-300">{ACTION_LABELS[log.action]}</td>
                   </tr>
                 ))
               )}

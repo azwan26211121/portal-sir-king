@@ -109,18 +109,18 @@ export function TraineeManagementView({
 
   return (
     <div className="space-y-6">
-      <section className="bg-white border border-slate-200 rounded-xl p-6">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-200">
+      <section className="bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-6">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-[#1a2f5c]">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">
+            <h2 className="text-lg font-bold text-white">
               Pengurusan &amp; Kelulusan Permohonan Pelatih
             </h2>
-            <p className="mt-1 text-sm text-slate-600">
-              Luluskan (<span className="font-mono text-xs">approve</span>) permohonan pelatih di bawah penyeliaan anda dan tetapkan tahap pembelajaran mereka.
+            <p className="mt-1 text-sm text-slate-300">
+              Luluskan (<span className="font-mono text-xs text-[#f0cb63]">approve</span>) permohonan pelatih di bawah penyeliaan anda dan tetapkan tahap pembelajaran mereka.
             </p>
           </div>
 
-          <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg self-start">
+          <div className="flex items-center gap-1 p-1 bg-[#071024] border border-[#1a2f5c] rounded-lg self-start">
             {(
               [
                 { id: 'all', label: 'Semua' },
@@ -135,8 +135,8 @@ export function TraineeManagementView({
                 onClick={() => setStatusFilter(tab.id)}
                 className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
                   statusFilter === tab.id
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-[#17356e] text-[#f0cb63] shadow-sm font-semibold'
+                    : 'text-slate-300 hover:text-white'
                 }`}
               >
                 {tab.label}
@@ -150,8 +150,8 @@ export function TraineeManagementView({
             role="status"
             className={`mt-4 p-3 rounded-lg text-xs border ${
               feedback.type === 'ok'
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                : 'bg-red-50 border-red-200 text-red-800'
+                ? 'bg-emerald-950/60 border-emerald-700/60 text-emerald-300'
+                : 'bg-red-950/60 border-red-800/70 text-red-300'
             }`}
           >
             {feedback.text}
@@ -161,7 +161,7 @@ export function TraineeManagementView({
         <div className="mt-5 overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-200 text-xs font-semibold text-slate-500">
+              <tr className="border-b border-[#1a2f5c] text-xs font-semibold text-slate-400">
                 <th className="py-3 pr-4">Nama Pelatih</th>
                 <th className="py-3 px-3">Guru Penyelia</th>
                 <th className="py-3 px-3">Tahap Akses</th>
@@ -169,16 +169,16 @@ export function TraineeManagementView({
                 <th className="py-3 pl-3 text-right">Tindakan</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 text-sm">
+            <tbody className="divide-y divide-[#1a2f5c] text-sm">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-slate-500">
+                  <td colSpan={5} className="py-8 text-center text-slate-400">
                     Memuatkan senarai pelatih...
                   </td>
                 </tr>
               ) : filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-slate-500">
+                  <td colSpan={5} className="py-8 text-center text-slate-400">
                     Tiada permohonan pelatih dalam kategori ini.
                   </td>
                 </tr>
@@ -186,14 +186,14 @@ export function TraineeManagementView({
                 filteredUsers.map((trainee) => {
                   const busy = actionBusyId === trainee.id;
                   return (
-                    <tr key={trainee.id} className="hover:bg-slate-50/60">
+                    <tr key={trainee.id} className="hover:bg-[#112247]/60">
                       <td className="py-3.5 pr-4">
-                        <p className="font-medium text-slate-900">{trainee.name}</p>
-                        <p className="text-xs font-mono text-slate-500 tabular-nums">
+                        <p className="font-medium text-white">{trainee.name}</p>
+                        <p className="text-xs font-mono text-slate-400 tabular-nums">
                           ID: {trainee.userId} · Daftar: {new Date(trainee.createdAt).toLocaleDateString('ms-MY')}
                         </p>
                       </td>
-                      <td className="py-3.5 px-3 text-xs text-slate-700">
+                      <td className="py-3.5 px-3 text-xs text-slate-300">
                         {trainee.supervisorName || 'Pentadbir Utama'}
                       </td>
                       <td className="py-3.5 px-3">
@@ -206,7 +206,7 @@ export function TraineeManagementView({
                               [trainee.id]: e.target.value,
                             })
                           }
-                          className="px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                          className="px-2.5 py-1.5 text-xs border border-[#263f73] rounded-lg bg-[#071024] text-slate-100"
                         >
                           {levels.map((lvl) => (
                             <option key={lvl.id} value={lvl.id}>
@@ -217,11 +217,11 @@ export function TraineeManagementView({
                       </td>
                       <td className="py-3.5 px-3 text-xs font-medium">
                         {trainee.status === 'approved' ? (
-                          <span className="text-emerald-700">Diluluskan</span>
+                          <span className="text-emerald-400">Diluluskan</span>
                         ) : trainee.status === 'rejected' ? (
-                          <span className="text-red-700">Ditolak</span>
+                          <span className="text-red-400">Ditolak</span>
                         ) : (
-                          <span className="text-amber-700">Menunggu (Pending)</span>
+                          <span className="text-amber-400">Menunggu (Pending)</span>
                         )}
                       </td>
                       <td className="py-3.5 pl-3 text-right">
@@ -230,7 +230,7 @@ export function TraineeManagementView({
                             type="button"
                             disabled={busy}
                             onClick={() => handleDecision(trainee.id, 'approved')}
-                            className="px-3 py-1.5 text-xs font-medium text-white bg-emerald-700 hover:bg-emerald-800 disabled:opacity-60 rounded-lg inline-flex items-center gap-1 whitespace-nowrap"
+                            className="px-3 py-1.5 text-xs font-medium text-white bg-emerald-700 hover:bg-emerald-600 disabled:opacity-60 rounded-lg inline-flex items-center gap-1 whitespace-nowrap"
                           >
                             <Check className="w-3.5 h-3.5" />
                             <span>Luluskan</span>
@@ -240,7 +240,7 @@ export function TraineeManagementView({
                               type="button"
                               disabled={busy}
                               onClick={() => handleDecision(trainee.id, 'rejected')}
-                              className="px-3 py-1.5 text-xs font-medium text-red-700 bg-white border border-red-200 hover:bg-red-50 disabled:opacity-60 rounded-lg inline-flex items-center gap-1 whitespace-nowrap"
+                              className="px-3 py-1.5 text-xs font-medium text-red-300 bg-red-950/50 border border-red-800/60 hover:bg-red-900/60 disabled:opacity-60 rounded-lg inline-flex items-center gap-1 whitespace-nowrap"
                             >
                               <X className="w-3.5 h-3.5" />
                               <span>Tolak</span>
@@ -258,12 +258,12 @@ export function TraineeManagementView({
       </section>
 
       {currentUser.role !== 'admin' && currentUser.role !== 'master_admin' && (
-        <section className="bg-white border border-slate-200 rounded-xl p-6 max-w-xl">
+        <section className="bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-6 max-w-xl">
           <div className="flex items-center gap-2">
-            <KeyRound className="w-4 h-4 text-[#0a2e6c]" />
-            <h3 className="text-base font-bold text-[#061b44]">Kemaskini PIN Akses 6 Digit</h3>
+            <KeyRound className="w-4 h-4 text-[#f0cb63]" />
+            <h3 className="text-base font-bold text-white">Kemaskini PIN Akses 6 Digit</h3>
           </div>
-          <p className="mt-1 text-xs text-slate-600">
+          <p className="mt-1 text-xs text-slate-300">
             Tukar PIN akses 6 digit akaun pengajar anda secara berkala untuk keselamatan.
           </p>
 
@@ -271,46 +271,50 @@ export function TraineeManagementView({
             <div
               className={`mt-4 p-3 rounded-lg text-xs border ${
                 pinFeedback.type === 'ok'
-                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                  : 'bg-red-50 border-red-200 text-red-800'
+                  ? 'bg-emerald-950/60 border-emerald-700/60 text-emerald-300'
+                  : 'bg-red-950/60 border-red-800/70 text-red-300'
               }`}
             >
               {pinFeedback.text}
             </div>
           )}
 
-          <form onSubmit={handleUpdatePin} className="mt-4 grid sm:grid-cols-2 gap-4">
+          <form onSubmit={handleUpdatePin} autoComplete="off" className="mt-4 grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">PIN Semasa</label>
+              <label className="block text-xs font-medium text-slate-200 mb-1">PIN Semasa</label>
               <input
-                type="password"
+                type="text"
                 inputMode="numeric"
                 maxLength={6}
                 required
+                autoComplete="off"
+                data-lpignore="true"
                 value={currentPin}
                 onChange={(e) => setCurrentPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 placeholder="6 digit"
-                className="w-full px-3 py-2 text-sm font-mono tabular-nums tracking-[0.2em] border border-slate-300 rounded-lg"
+                className="w-full px-3 py-2 text-sm font-mono tabular-nums tracking-[0.2em] bg-[#071024] text-slate-100 placeholder:text-slate-500 border border-[#263f73] rounded-lg pin-masked"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">PIN Baharu</label>
+              <label className="block text-xs font-medium text-slate-200 mb-1">PIN Baharu</label>
               <input
-                type="password"
+                type="text"
                 inputMode="numeric"
                 maxLength={6}
                 required
+                autoComplete="off"
+                data-lpignore="true"
                 value={newPin}
                 onChange={(e) => setNewPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 placeholder="6 digit baharu"
-                className="w-full px-3 py-2 text-sm font-mono tabular-nums tracking-[0.2em] border border-slate-300 rounded-lg"
+                className="w-full px-3 py-2 text-sm font-mono tabular-nums tracking-[0.2em] bg-[#071024] text-slate-100 placeholder:text-slate-500 border border-[#263f73] rounded-lg pin-masked"
               />
             </div>
             <div className="sm:col-span-2">
               <button
                 type="submit"
                 disabled={pinBusy}
-                className="px-4 py-2 text-xs font-medium text-white bg-[#0a2e6c] hover:bg-[#061b44] rounded-lg"
+                className="px-4 py-2 text-xs font-semibold text-[#041434] bg-[#e5b94c] hover:bg-[#f0cb63] rounded-lg"
               >
                 {pinBusy ? 'Menyimpan...' : 'Kemas Kini PIN 6 Digit'}
               </button>

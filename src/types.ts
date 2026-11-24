@@ -119,15 +119,36 @@ export interface AccessLogEntry {
 
 export interface AuthStatusResponse {
   adminConfigured: boolean;
-  adminEmail: string;
 }
 
 export interface BrandingConfig {
   portalName: string;
   portalTagline: string;
+  heroHeadline: string;
+  feature1Title: string;
+  feature1Desc: string;
+  feature2Title: string;
+  feature2Desc: string;
+  feature3Title: string;
+  feature3Desc: string;
+  authGateTitle: string;
+  authGateSubtitle: string;
+  welcomePrefix: string;
+  footerCaption: string;
+  pendingTitle: string;
+  pendingMessage: string;
   logoUrl: string;
   bannerUrl: string;
   hasCustomLogo: boolean;
   hasCustomBanner: boolean;
+  paymentQrUrl: string | null;
+  hasPaymentQr: boolean;
+  paymentQrTitle: string;
+  paymentQrNote: string;
+  whatsappQrUrl: string | null;
+  hasWhatsappQr: boolean;
+  whatsappQrTitle: string;
+  whatsappQrNote: string;
+  whatsappUrl: string;
   updatedAt: string;
 }

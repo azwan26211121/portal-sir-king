@@ -8,9 +8,12 @@ import multer from 'multer';
 import { createServer as createViteServer } from 'vite';
 import {
   ADMIN_EMAIL,
+  DEFAULT_BRANDING_TEXTS,
+  DEFAULT_PAYMENT_QR_TITLE,
   DEFAULT_PORTAL_NAME,
   DEFAULT_PORTAL_TAGLINE,
   DEFAULT_SUB_TITLES,
+  DEFAULT_WHATSAPP_QR_TITLE,
   UPLOADS_DIR,
   hashSecret,
   hashToken,
@@ -364,7 +367,6 @@ async function startServer(): Promise<void> {
     const adminConfigured = isAdminEnvPasswordConfigured() || Boolean(store.adminPasswordHash);
     res.json({
       adminConfigured,
-      adminEmail: ADMIN_EMAIL,
     });
   });
 
@@ -387,18 +389,35 @@ async function startServer(): Promise<void> {
 
   app.get('/api/branding/:kind', (req: Request, res: Response) => {
     const { kind } = req.params;
-    if (kind !== 'logo' && kind !== 'banner') {
+    if (
+      kind !== 'logo' &&
+      kind !== 'banner' &&
+      kind !== 'payment-qr' &&
+      kind !== 'whatsapp-qr'
+    ) {
       res.status(404).json({ error: 'Aset penjenamaan tidak dijumpai.' });
       return;
     }
     const store = loadStore();
     const storedName =
-      kind === 'logo' ? store.branding.customLogoStoredName : store.branding.customBannerStoredName;
+      kind === 'logo'
+        ? store.branding.customLogoStoredName
+        : kind === 'banner'
+        ? store.branding.customBannerStoredName
+        : kind === 'payment-qr'
+        ? store.branding.paymentQrStoredName
+        : store.branding.whatsappQrStoredName;
     const mimeType =
-      kind === 'logo' ? store.branding.customLogoMimeType : store.branding.customBannerMimeType;
+      kind === 'logo'
+        ? store.branding.customLogoMimeType
+        : kind === 'banner'
+        ? store.branding.customBannerMimeType
+        : kind === 'payment-qr'
+        ? store.branding.paymentQrMimeType
+        : store.branding.whatsappQrMimeType;
     const resolvedPath = safeResolveImagePath(storedName);
     if (!resolvedPath || !mimeType || !fs.existsSync(resolvedPath)) {
-      res.status(404).json({ error: 'Imej penjenamaan tersuai belum ditetapkan.' });
+      res.status(404).json({ error: 'Imej aset belum ditetapkan.' });
       return;
     }
     res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -413,18 +432,88 @@ async function startServer(): Promise<void> {
     requireApproved,
     requireRole(['admin', 'master_admin']),
     (req: AuthenticatedRequest, res: Response) => {
-      const { portalName, portalTagline } = req.body as {
-        portalName?: unknown;
-        portalTagline?: unknown;
-      };
+      const body = req.body as Record<string, unknown>;
       const store = loadStore();
-      if (typeof portalName === 'string') {
-        const cleanName = portalName.trim().slice(0, 80);
-        store.branding.portalName = cleanName || DEFAULT_PORTAL_NAME;
+      if (typeof body.whatsappUrl === 'string') {
+        const checked = validateSafeHttpsUrl(body.whatsappUrl);
+        if (!checked.ok) {
+          res.status(400).json({ error: `Pautan WhatsApp: ${checked.error}` });
+          return;
+        }
+        store.branding.whatsappUrl = checked.normalized;
       }
-      if (typeof portalTagline === 'string') {
-        const cleanTagline = portalTagline.trim().slice(0, 140);
-        store.branding.portalTagline = cleanTagline || DEFAULT_PORTAL_TAGLINE;
+      if (typeof body.portalName === 'string') {
+        store.branding.portalName = body.portalName.trim().slice(0, 80) || DEFAULT_PORTAL_NAME;
+      }
+      if (typeof body.portalTagline === 'string') {
+        store.branding.portalTagline =
+          body.portalTagline.trim().slice(0, 140) || DEFAULT_PORTAL_TAGLINE;
+      }
+      if (typeof body.heroHeadline === 'string') {
+        store.branding.heroHeadline =
+          body.heroHeadline.trim().slice(0, 180) || DEFAULT_BRANDING_TEXTS.heroHeadline;
+      }
+      if (typeof body.feature1Title === 'string') {
+        store.branding.feature1Title =
+          body.feature1Title.trim().slice(0, 80) || DEFAULT_BRANDING_TEXTS.feature1Title;
+      }
+      if (typeof body.feature1Desc === 'string') {
+        store.branding.feature1Desc =
+          body.feature1Desc.trim().slice(0, 260) || DEFAULT_BRANDING_TEXTS.feature1Desc;
+      }
+      if (typeof body.feature2Title === 'string') {
+        store.branding.feature2Title =
+          body.feature2Title.trim().slice(0, 80) || DEFAULT_BRANDING_TEXTS.feature2Title;
+      }
+      if (typeof body.feature2Desc === 'string') {
+        store.branding.feature2Desc =
+          body.feature2Desc.trim().slice(0, 260) || DEFAULT_BRANDING_TEXTS.feature2Desc;
+      }
+      if (typeof body.feature3Title === 'string') {
+        store.branding.feature3Title =
+          body.feature3Title.trim().slice(0, 80) || DEFAULT_BRANDING_TEXTS.feature3Title;
+      }
+      if (typeof body.feature3Desc === 'string') {
+        store.branding.feature3Desc =
+          body.feature3Desc.trim().slice(0, 260) || DEFAULT_BRANDING_TEXTS.feature3Desc;
+      }
+      if (typeof body.authGateTitle === 'string') {
+        store.branding.authGateTitle =
+          body.authGateTitle.trim().slice(0, 80) || DEFAULT_BRANDING_TEXTS.authGateTitle;
+      }
+      if (typeof body.authGateSubtitle === 'string') {
+        store.branding.authGateSubtitle =
+          body.authGateSubtitle.trim().slice(0, 220) || DEFAULT_BRANDING_TEXTS.authGateSubtitle;
+      }
+      if (typeof body.welcomePrefix === 'string') {
+        store.branding.welcomePrefix =
+          body.welcomePrefix.trim().slice(0, 60) || DEFAULT_BRANDING_TEXTS.welcomePrefix;
+      }
+      if (typeof body.footerCaption === 'string') {
+        store.branding.footerCaption =
+          body.footerCaption.trim().slice(0, 160) || DEFAULT_BRANDING_TEXTS.footerCaption;
+      }
+      if (typeof body.pendingTitle === 'string') {
+        store.branding.pendingTitle =
+          body.pendingTitle.trim().slice(0, 100) || DEFAULT_BRANDING_TEXTS.pendingTitle;
+      }
+      if (typeof body.pendingMessage === 'string') {
+        store.branding.pendingMessage =
+          body.pendingMessage.trim().slice(0, 320) || DEFAULT_BRANDING_TEXTS.pendingMessage;
+      }
+      if (typeof body.paymentQrTitle === 'string') {
+        store.branding.paymentQrTitle =
+          body.paymentQrTitle.trim().slice(0, 80) || DEFAULT_PAYMENT_QR_TITLE;
+      }
+      if (typeof body.paymentQrNote === 'string') {
+        store.branding.paymentQrNote = body.paymentQrNote.trim().slice(0, 160);
+      }
+      if (typeof body.whatsappQrTitle === 'string') {
+        store.branding.whatsappQrTitle =
+          body.whatsappQrTitle.trim().slice(0, 80) || DEFAULT_WHATSAPP_QR_TITLE;
+      }
+      if (typeof body.whatsappQrNote === 'string') {
+        store.branding.whatsappQrNote = body.whatsappQrNote.trim().slice(0, 160);
       }
       store.branding.updatedAt = new Date().toISOString();
       saveStore(store);
@@ -440,8 +529,15 @@ async function startServer(): Promise<void> {
     upload.single('file'),
     (req: AuthenticatedRequest, res: Response) => {
       const { kind } = req.params;
-      if (kind !== 'logo' && kind !== 'banner') {
-        res.status(400).json({ error: 'Jenis imej mestilah logo atau banner.' });
+      if (
+        kind !== 'logo' &&
+        kind !== 'banner' &&
+        kind !== 'payment-qr' &&
+        kind !== 'whatsapp-qr'
+      ) {
+        res
+          .status(400)
+          .json({ error: 'Jenis imej mestilah logo, banner, payment-qr atau whatsapp-qr.' });
         return;
       }
       if (!req.file) {
@@ -470,10 +566,18 @@ async function startServer(): Promise<void> {
         safeDeleteImage(store.branding.customLogoStoredName);
         store.branding.customLogoStoredName = storedName;
         store.branding.customLogoMimeType = detected.mimeType;
-      } else {
+      } else if (kind === 'banner') {
         safeDeleteImage(store.branding.customBannerStoredName);
         store.branding.customBannerStoredName = storedName;
         store.branding.customBannerMimeType = detected.mimeType;
+      } else if (kind === 'payment-qr') {
+        safeDeleteImage(store.branding.paymentQrStoredName);
+        store.branding.paymentQrStoredName = storedName;
+        store.branding.paymentQrMimeType = detected.mimeType;
+      } else {
+        safeDeleteImage(store.branding.whatsappQrStoredName);
+        store.branding.whatsappQrStoredName = storedName;
+        store.branding.whatsappQrMimeType = detected.mimeType;
       }
       store.branding.updatedAt = new Date().toISOString();
       saveStore(store);
@@ -488,8 +592,15 @@ async function startServer(): Promise<void> {
     requireRole(['admin', 'master_admin']),
     (req: AuthenticatedRequest, res: Response) => {
       const { kind } = req.params;
-      if (kind !== 'logo' && kind !== 'banner') {
-        res.status(400).json({ error: 'Jenis imej mestilah logo atau banner.' });
+      if (
+        kind !== 'logo' &&
+        kind !== 'banner' &&
+        kind !== 'payment-qr' &&
+        kind !== 'whatsapp-qr'
+      ) {
+        res
+          .status(400)
+          .json({ error: 'Jenis imej mestilah logo, banner, payment-qr atau whatsapp-qr.' });
         return;
       }
       const store = loadStore();
@@ -497,10 +608,18 @@ async function startServer(): Promise<void> {
         safeDeleteImage(store.branding.customLogoStoredName);
         store.branding.customLogoStoredName = null;
         store.branding.customLogoMimeType = null;
-      } else {
+      } else if (kind === 'banner') {
         safeDeleteImage(store.branding.customBannerStoredName);
         store.branding.customBannerStoredName = null;
         store.branding.customBannerMimeType = null;
+      } else if (kind === 'payment-qr') {
+        safeDeleteImage(store.branding.paymentQrStoredName);
+        store.branding.paymentQrStoredName = null;
+        store.branding.paymentQrMimeType = null;
+      } else {
+        safeDeleteImage(store.branding.whatsappQrStoredName);
+        store.branding.whatsappQrStoredName = null;
+        store.branding.whatsappQrMimeType = null;
       }
       store.branding.updatedAt = new Date().toISOString();
       saveStore(store);
@@ -516,7 +635,7 @@ async function startServer(): Promise<void> {
     }
     const { email, password } = req.body as { email?: unknown; password?: unknown };
     if (typeof email !== 'string' || email.trim().toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-      res.status(400).json({ error: `Emel pentadbir mestilah ${ADMIN_EMAIL}.` });
+      res.status(403).json({ error: 'Emel pentadbir utama tidak sepadan dengan rekod berdaftar.' });
       return;
     }
     if (typeof password !== 'string' || password.length < 8 || password.length > 128) {
@@ -548,50 +667,60 @@ async function startServer(): Promise<void> {
       pin?: unknown;
     };
 
-    if (role === 'master_admin') {
-      if (typeof email !== 'string' || typeof password !== 'string') {
-        res.status(400).json({ error: 'Emel dan kata laluan Master Admin diperlukan.' });
+    if (role === 'master_admin' || role === 'admin') {
+      const rawIdentifier =
+        typeof email === 'string' && email.trim()
+          ? email.trim()
+          : typeof userId === 'string'
+          ? userId.trim()
+          : '';
+      if (!rawIdentifier || typeof password !== 'string' || !password) {
+        res.status(400).json({ error: 'ID pentadbir atau emel serta kata laluan diperlukan.' });
         return;
       }
-      if (email.trim().toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-        res.status(401).json({ error: 'Emel atau kata laluan Master Admin tidak sah.' });
-        return;
-      }
-      const envPass = process.env.ADMIN_PASSWORD;
-      let valid = false;
-      if (typeof envPass === 'string' && envPass.trim().length > 0) {
-        valid = verifyPlainEnvSecret(password, envPass);
-      } else if (store.adminPasswordHash) {
-        valid = verifySecret(password, store.adminPasswordHash);
-      } else {
-        res.status(400).json({ error: 'Kata laluan Master Admin belum disediakan.' });
-        return;
-      }
-      if (!valid) {
-        res.status(401).json({ error: 'Emel atau kata laluan Master Admin tidak sah.' });
-        return;
-      }
+      const normalizedIdentifier = rawIdentifier.toLowerCase();
       const masterUser = store.users.find((u) => u.role === 'master_admin');
-      if (!masterUser) {
-        res.status(500).json({ error: 'Akaun Master Admin tidak dijumpai.' });
-        return;
-      }
-      const token = createSessionToken(masterUser.id);
-      res.json({ token, user: toPublicUser(masterUser, store.users) });
-      return;
-    }
+      const matchesMaster =
+        normalizedIdentifier === ADMIN_EMAIL.toLowerCase() ||
+        (masterUser && masterUser.userId.trim().toLowerCase() === normalizedIdentifier);
 
-    if (role === 'admin') {
-      if (typeof userId !== 'string' || !userId.trim() || typeof password !== 'string' || !password) {
-        res.status(400).json({ error: 'User ID Admin dan kata laluan diperlukan.' });
+      if (matchesMaster) {
+        const envPass = process.env.ADMIN_PASSWORD;
+        let valid = false;
+        if (store.adminPasswordHash) {
+          valid = verifySecret(password, store.adminPasswordHash);
+        } else if (typeof envPass === 'string' && envPass.trim().length > 0) {
+          valid = verifyPlainEnvSecret(password, envPass);
+        } else {
+          res.status(400).json({
+            error:
+              'Kata laluan pentadbir utama belum diaktifkan. Sila lengkapkan pengaktifan kali pertama.',
+          });
+          return;
+        }
+        if (!valid) {
+          res.status(401).json({ error: 'ID, emel atau kata laluan pentadbir tidak sah.' });
+          return;
+        }
+        if (!masterUser) {
+          res.status(500).json({ error: 'Akaun Pentadbir Utama tidak dijumpai.' });
+          return;
+        }
+        const token = createSessionToken(masterUser.id);
+        res.json({ token, user: toPublicUser(masterUser, store.users) });
         return;
       }
-      const normalizedUserId = userId.trim().toLowerCase();
+
+      if (role === 'master_admin') {
+        res.status(401).json({ error: 'ID, emel atau kata laluan pentadbir tidak sah.' });
+        return;
+      }
+
       const adminUser = store.users.find(
-        (u) => u.role === 'admin' && u.userId.trim().toLowerCase() === normalizedUserId
+        (u) => u.role === 'admin' && u.userId.trim().toLowerCase() === normalizedIdentifier
       );
       if (!adminUser) {
-        res.status(401).json({ error: 'User ID atau kata laluan Admin tidak sah.' });
+        res.status(401).json({ error: 'ID, emel atau kata laluan pentadbir tidak sah.' });
         return;
       }
       if (!adminUser.passwordHash) {
@@ -601,7 +730,7 @@ async function startServer(): Promise<void> {
         return;
       }
       if (!verifySecret(password, adminUser.passwordHash)) {
-        res.status(401).json({ error: 'User ID atau kata laluan Admin tidak sah.' });
+        res.status(401).json({ error: 'ID, emel atau kata laluan pentadbir tidak sah.' });
         return;
       }
       const token = createSessionToken(adminUser.id);
@@ -619,7 +748,10 @@ async function startServer(): Promise<void> {
         (u) => u.role === role && u.userId.trim().toLowerCase() === normalizedUserId
       );
       if (!user || !user.pinHash || !verifySecret(pin, user.pinHash)) {
-        res.status(401).json({ error: 'User ID atau PIN akses 6 digit tidak tepat.' });
+        res.status(401).json({
+          error:
+            'User ID atau PIN akses 6 digit tidak tepat. Jika belum mempunyai akaun, sila daftar di tab Daftar Baru.',
+        });
         return;
       }
       const token = createSessionToken(user.id);
@@ -792,11 +924,13 @@ async function startServer(): Promise<void> {
       return;
     }
     if (user.role === 'master_admin') {
-      if (isAdminEnvPasswordConfigured()) {
-        res.status(400).json({ error: 'Kata laluan Master Admin diuruskan melalui persekitaran pelayan.' });
-        return;
-      }
-      if (!store.adminPasswordHash || !verifySecret(currentPassword, store.adminPasswordHash)) {
+      const envPass = process.env.ADMIN_PASSWORD;
+      const validCurrent = store.adminPasswordHash
+        ? verifySecret(currentPassword, store.adminPasswordHash)
+        : typeof envPass === 'string' && envPass.trim().length > 0
+        ? verifyPlainEnvSecret(currentPassword, envPass)
+        : false;
+      if (!validCurrent) {
         res.status(401).json({ error: 'Kata laluan semasa tidak tepat.' });
         return;
       }
