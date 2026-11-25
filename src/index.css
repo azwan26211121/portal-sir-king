@@ -31,3 +31,24 @@
 .pin-masked {
   -webkit-text-security: disc;
 }
+
+@page {
+  size: A4 portrait;
+  margin: 12mm 14mm;
+}
+
+@media print {
+  html,
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    color-scheme: light !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .jpk-print-avoid-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}

@@ -25,15 +25,21 @@ import {
   verifySecret,
 } from './server/store.ts';
 import type { StoredUser } from './server/store.ts';
+import { gradeTugasanWithAI } from './server/aiGrader.ts';
+import { createDefaultTugasanForCustomCu } from './server/tugasanBank.ts';
 import type {
   AccessLogEntry,
   ApprovalStatus,
   CUModule,
+  EbookNoteModule,
   FileMetadata,
   FileSlotType,
   SopCategory,
   SopStep,
   SubKey,
+  TugasanPaper,
+  TugasanQuestion,
+  TugasanSubmission,
   UserRole,
 } from './src/types.ts';
 
@@ -114,6 +120,7 @@ function getAllCuFiles(cu: CUModule): (FileMetadata | null)[] {
     cu.teoriSub2.panduanSoalanSlot,
     cu.amaliSub1.sopDocSlot,
     cu.amaliSub2.sopDocSlot,
+    ...(cu.ebookModules || []).map((m) => m.file),
   ];
 }
 
@@ -971,6 +978,13 @@ async function startServer(): Promise<void> {
         ? store.accessLogs.filter((l) => l.userId === user.id).slice(-50)
         : store.accessLogs.slice(-200);
 
+    const visibleCuIds = new Set(cus.map((c) => c.id));
+    const tugasanPapers = (store.tugasanPapers || []).filter((p) => visibleCuIds.has(p.cuId));
+    const tugasanSubmissions =
+      user.role === 'pelatih'
+        ? (store.tugasanSubmissions || []).filter((s) => s.userId === user.id)
+        : (store.tugasanSubmissions || []).slice(-300);
+
     const teachers = store.users
       .filter((u) => u.role === 'pengajar' && u.status === 'approved')
       .map((u) => ({ id: u.id, name: u.name }));
@@ -978,6 +992,8 @@ async function startServer(): Promise<void> {
     res.json({
       levels,
       cus,
+      tugasanPapers,
+      tugasanSubmissions,
       sopProgress,
       accessLogs,
       teachers,
@@ -1095,7 +1111,10 @@ async function startServer(): Promise<void> {
           safeDeleteUpload(meta);
         }
       }
+      const removedCuIds = new Set(removedCUs.map((c) => c.id));
       store.cus = store.cus.filter((c) => c.levelId !== req.params.id);
+      store.tugasanPapers = store.tugasanPapers.filter((p) => !removedCuIds.has(p.cuId));
+      store.tugasanSubmissions = store.tugasanSubmissions.filter((s) => !removedCuIds.has(s.cuId));
       store.levels.splice(idx, 1);
       saveStore(store);
       res.json({ ok: true });
@@ -1136,15 +1155,20 @@ async function startServer(): Promise<void> {
         title: cleanTitle,
         description: typeof description === 'string' ? description.trim().slice(0, 400) : '',
         order: maxOrder + 1,
+        ebookModules: [],
         teoriSub1: {
           notaSlot: null,
           panduanSoalanSlot: null,
+          googleDriveUrl: '',
+          googleDriveTitle: `Folder Nota Google Drive Sub 1 — ${cleanCode}`.slice(0, 140),
           googleFormUrl: '',
           googleFormTitle: `Latihan Teori Sub 1 — ${cleanCode}: ${cleanTitle}`.slice(0, 140),
         },
         teoriSub2: {
           notaSlot: null,
           panduanSoalanSlot: null,
+          googleDriveUrl: '',
+          googleDriveTitle: `Folder Nota Google Drive Sub 2 — ${cleanCode}`.slice(0, 140),
           googleFormUrl: '',
           googleFormTitle: `Latihan Teori Sub 2 — ${cleanCode}: ${cleanTitle}`.slice(0, 140),
         },
@@ -1158,6 +1182,10 @@ async function startServer(): Promise<void> {
         },
       };
       store.cus.push(newCU);
+      const targetLevel = store.levels.find((l) => l.id === levelId);
+      if (targetLevel) {
+        store.tugasanPapers.push(createDefaultTugasanForCustomCu(targetLevel, newCU));
+      }
       saveStore(store);
       res.status(201).json({ cu: newCU });
     }
@@ -1209,6 +1237,8 @@ async function startServer(): Promise<void> {
         safeDeleteUpload(meta);
       }
       store.cus.splice(idx, 1);
+      store.tugasanPapers = store.tugasanPapers.filter((p) => p.cuId !== cu.id);
+      store.tugasanSubmissions = store.tugasanSubmissions.filter((s) => s.cuId !== cu.id);
       saveStore(store);
       res.json({ ok: true });
     }
@@ -1298,6 +1328,106 @@ async function startServer(): Promise<void> {
     }
   );
 
+  // --- Multi-Part E-Book Kertas Penerangan Notes per CU ---
+
+  app.post(
+    '/api/cus/:cuId/ebooks',
+    requireAuth,
+    requireApproved,
+    requireRole(['pengajar', 'admin', 'master_admin']),
+    upload.single('file'),
+    (req: AuthenticatedRequest, res: Response) => {
+      const { cuId } = req.params;
+      if (!req.file) {
+        res.status(400).json({ error: 'Sila pilih fail PDF atau Word (.doc/.docx) untuk dimuat naik.' });
+        return;
+      }
+      const detected = detectAllowedDocType(req.file.originalname, req.file.buffer);
+      if (!detected.ok) {
+        res.status(400).json({ error: detected.error });
+        return;
+      }
+      const store = loadStore();
+      const cu = store.cus.find((c) => c.id === cuId);
+      if (!cu) {
+        res.status(404).json({ error: 'CU tidak dijumpai.' });
+        return;
+      }
+
+      const rawCode = typeof req.body?.code === 'string' ? req.body.code.trim() : '';
+      const rawTitle = typeof req.body?.title === 'string' ? req.body.title.trim() : '';
+      const safeOriginal = path
+        .basename(req.file.originalname)
+        .replace(/[^\w.\- ()]/g, '_')
+        .slice(0, 120);
+      const fallbackTitle = safeOriginal.replace(/\.(pdf|doc|docx)$/i, '');
+
+      const fileId = crypto.randomUUID();
+      const storedName = `${fileId}${detected.extension}`;
+      const targetPath = safeResolveUploadPath(storedName);
+      if (!targetPath) {
+        res.status(400).json({ error: 'Nama fail tidak sah.' });
+        return;
+      }
+
+      fs.writeFileSync(targetPath, req.file.buffer);
+
+      const newMeta: FileMetadata = {
+        id: fileId,
+        originalName: safeOriginal || `nota${detected.extension}`,
+        storedName,
+        mimeType: detected.mimeType,
+        extension: detected.extension,
+        sizeBytes: req.file.size,
+        uploadedAt: new Date().toISOString(),
+        uploadedById: req.authUser!.id,
+        uploadedByName: req.authUser!.name,
+      };
+
+      const nextIndex = (cu.ebookModules?.length || 0) + 1;
+      const newModule: EbookNoteModule = {
+        id: `ebook-${crypto.randomUUID().slice(0, 8)}`,
+        code: (rawCode || `KP(${nextIndex})`).slice(0, 24),
+        title: (rawTitle || fallbackTitle || `Nota E-Book ${nextIndex}`).slice(0, 160),
+        file: newMeta,
+      };
+
+      if (!Array.isArray(cu.ebookModules)) {
+        cu.ebookModules = [];
+      }
+      cu.ebookModules.push(newModule);
+      saveStore(store);
+      res.status(201).json({ cu, module: newModule });
+    }
+  );
+
+  app.delete(
+    '/api/cus/:cuId/ebooks/:moduleId',
+    requireAuth,
+    requireApproved,
+    requireRole(['pengajar', 'admin', 'master_admin']),
+    (req: AuthenticatedRequest, res: Response) => {
+      const { cuId, moduleId } = req.params;
+      const store = loadStore();
+      const cu = store.cus.find((c) => c.id === cuId);
+      if (!cu) {
+        res.status(404).json({ error: 'CU tidak dijumpai.' });
+        return;
+      }
+      const list = cu.ebookModules || [];
+      const idx = list.findIndex((m) => m.id === moduleId);
+      if (idx === -1) {
+        res.status(404).json({ error: 'Modul E-Book tidak dijumpai.' });
+        return;
+      }
+      const [removed] = list.splice(idx, 1);
+      cu.ebookModules = list;
+      safeDeleteUpload(removed.file);
+      saveStore(store);
+      res.json({ cu });
+    }
+  );
+
   app.get('/api/files/:fileId', requireAuth, requireApproved, (req: AuthenticatedRequest, res: Response) => {
     const store = loadStore();
     const fileId = req.params.fileId;
@@ -1375,6 +1505,52 @@ async function startServer(): Promise<void> {
       targetSub.googleFormUrl = check.normalized;
       if (typeof googleFormTitle === 'string') {
         targetSub.googleFormTitle = googleFormTitle.trim().slice(0, 140);
+      }
+      saveStore(store);
+      res.json({ cu });
+    }
+  );
+
+  app.put(
+    '/api/cus/:cuId/google-drive',
+    requireAuth,
+    requireApproved,
+    requireRole(['pengajar', 'admin', 'master_admin']),
+    (req: AuthenticatedRequest, res: Response) => {
+      const store = loadStore();
+      const cu = store.cus.find((c) => c.id === req.params.cuId);
+      if (!cu) {
+        res.status(404).json({ error: 'CU tidak dijumpai.' });
+        return;
+      }
+      const { subKey, googleDriveUrl, googleDriveTitle } = req.body as {
+        subKey?: unknown;
+        googleDriveUrl?: unknown;
+        googleDriveTitle?: unknown;
+      };
+      const resolvedSub: SubKey = subKey === 'sub2' ? 'sub2' : 'sub1';
+      if (typeof googleDriveUrl !== 'string') {
+        res.status(400).json({ error: 'URL Folder Google Drive tidak sah.' });
+        return;
+      }
+      const check = validateSafeHttpsUrl(googleDriveUrl);
+      if (!check.ok) {
+        res.status(400).json({ error: check.error });
+        return;
+      }
+      if (check.normalized) {
+        const parsedHost = new URL(check.normalized).hostname.toLowerCase();
+        if (parsedHost !== 'drive.google.com' && parsedHost !== 'docs.google.com') {
+          res.status(400).json({
+            error: 'Sila masukkan pautan Google Drive yang sah (drive.google.com).',
+          });
+          return;
+        }
+      }
+      const targetSub = resolvedSub === 'sub2' ? cu.teoriSub2 : cu.teoriSub1;
+      targetSub.googleDriveUrl = check.normalized;
+      if (typeof googleDriveTitle === 'string') {
+        targetSub.googleDriveTitle = googleDriveTitle.trim().slice(0, 140);
       }
       saveStore(store);
       res.json({ cu });
@@ -1499,9 +1675,12 @@ async function startServer(): Promise<void> {
     const allowedActions: AccessLogEntry['action'][] = [
       'view_nota',
       'view_panduan',
+      'open_drive',
       'open_form',
       'view_sop',
       'complete_sop',
+      'submit_tugasan',
+      'print_tugasan',
     ];
     if (typeof cuId !== 'string' || !allowedActions.includes(action as AccessLogEntry['action'])) {
       res.status(400).json({ error: 'Rekod akses tidak sah.' });
@@ -1537,6 +1716,380 @@ async function startServer(): Promise<void> {
     saveStore(store);
     res.status(201).json({ entry });
   });
+
+  // --- Kertas Tugasan & AI Auto-Marking ---
+
+  app.post(
+    '/api/tugasan/:paperId/submit',
+    requireAuth,
+    requireApproved,
+    async (req: AuthenticatedRequest, res: Response) => {
+      const store = loadStore();
+      const user = req.authUser!;
+      const paper = store.tugasanPapers.find((p) => p.id === req.params.paperId);
+      if (!paper) {
+        res.status(404).json({ error: 'Kertas Tugasan tidak dijumpai.' });
+        return;
+      }
+      const cu = store.cus.find((c) => c.id === paper.cuId);
+      if (!cu) {
+        res.status(404).json({ error: 'Unit Kompetensi bagi tugasan ini tidak dijumpai.' });
+        return;
+      }
+      if (user.role === 'pelatih' && cu.levelId !== user.approvedLevelId) {
+        res.status(403).json({ error: 'Anda tiada akses ke tahap pembelajaran ini.' });
+        return;
+      }
+
+      const body = req.body as { answers?: unknown };
+      if (!body.answers || typeof body.answers !== 'object' || Array.isArray(body.answers)) {
+        res.status(400).json({ error: 'Format jawapan tugasan tidak sah.' });
+        return;
+      }
+
+      const rawAnswers = body.answers as Record<string, unknown>;
+      const sanitizedAnswers: Record<string, string> = {};
+      let nonEmptyCount = 0;
+      for (const q of paper.questions) {
+        const rawVal = rawAnswers[q.id];
+        const val = typeof rawVal === 'string' ? rawVal.trim().slice(0, 4000) : '';
+        sanitizedAnswers[q.id] = val;
+        if (val.length > 0) nonEmptyCount++;
+      }
+
+      if (nonEmptyCount === 0) {
+        res.status(400).json({ error: 'Sila jawab sekurang-kurangnya satu soalan sebelum menghantar untuk penandaan AI.' });
+        return;
+      }
+
+      try {
+        const graded = await gradeTugasanWithAI({
+          paper,
+          cu,
+          uploadsDir: UPLOADS_DIR,
+          answers: sanitizedAnswers,
+        });
+
+        const submission: TugasanSubmission = {
+          id: `sub-${crypto.randomUUID().slice(0, 10)}`,
+          templateId: paper.id,
+          cuId: cu.id,
+          userId: user.id,
+          userName: user.name,
+          userCodeId: user.userId,
+          submittedAt: new Date().toISOString(),
+          answers: sanitizedAnswers,
+          grades: graded.grades,
+          totalScore: graded.totalScore,
+          maxTotalScore: graded.maxTotalScore,
+          percentage: graded.percentage,
+          passed: graded.passed,
+          overallFeedback: graded.overallFeedback,
+          gradedByModel: graded.gradedByModel,
+        };
+
+        const latestStore = loadStore();
+        latestStore.tugasanSubmissions.push(submission);
+        if (latestStore.tugasanSubmissions.length > 1000) {
+          latestStore.tugasanSubmissions = latestStore.tugasanSubmissions.slice(-1000);
+        }
+        latestStore.accessLogs.push({
+          id: `log-${crypto.randomUUID().slice(0, 8)}`,
+          userId: user.id,
+          userName: user.name,
+          userRole: user.role,
+          cuId: cu.id,
+          cuCode: cu.code,
+          cuTitle: `${cu.title} (${paper.setCode} · ${submission.percentage}%)`,
+          action: 'submit_tugasan',
+          timestamp: submission.submittedAt,
+        });
+        if (latestStore.accessLogs.length > 500) {
+          latestStore.accessLogs = latestStore.accessLogs.slice(-500);
+        }
+        saveStore(latestStore);
+
+        res.status(201).json({ submission });
+      } catch (err) {
+        const message =
+          err instanceof Error
+            ? err.message
+            : 'Penandaan AI gagal diproses buat masa ini. Sila cuba sebentar lagi.';
+        res.status(503).json({ error: message });
+      }
+    }
+  );
+
+  app.post(
+    '/api/tugasan/:paperId/print-authorize',
+    requireAuth,
+    requireApproved,
+    (req: AuthenticatedRequest, res: Response) => {
+      const store = loadStore();
+      const user = req.authUser!;
+      const paper = store.tugasanPapers.find((p) => p.id === req.params.paperId);
+      if (!paper) {
+        res.status(404).json({ error: 'Kertas Tugasan tidak dijumpai.' });
+        return;
+      }
+      const cu = store.cus.find((c) => c.id === paper.cuId);
+      if (!cu) {
+        res.status(404).json({ error: 'CU tidak dijumpai.' });
+        return;
+      }
+      if (user.role === 'pelatih' && cu.levelId !== user.approvedLevelId) {
+        res.status(403).json({ error: 'Anda tiada akses ke tahap ini.' });
+        return;
+      }
+
+      const { submissionId } = (req.body || {}) as { submissionId?: unknown };
+      const submission =
+        typeof submissionId === 'string'
+          ? store.tugasanSubmissions.find(
+              (s) =>
+                s.id === submissionId &&
+                s.templateId === paper.id &&
+                (user.role !== 'pelatih' || s.userId === user.id)
+            )
+          : undefined;
+
+      if (user.role === 'pelatih') {
+        if (!submission || !submission.passed) {
+          res.status(403).json({
+            error: `Cetakan disekat. Markah mestilah lulus (>= ${paper.passingScore}%) sebelum kertas tugasan boleh dicetak.`,
+          });
+          return;
+        }
+      } else if (submission && !submission.passed) {
+        res.status(403).json({
+          error: `Rekod penilaian ini berstatus BELUM LULUS (< ${paper.passingScore}%). Hanya kertas lulus layak dicetak.`,
+        });
+        return;
+      }
+
+      store.accessLogs.push({
+        id: `log-${crypto.randomUUID().slice(0, 8)}`,
+        userId: user.id,
+        userName: user.name,
+        userRole: user.role,
+        cuId: cu.id,
+        cuCode: cu.code,
+        cuTitle: `${cu.title} (${paper.setCode})`,
+        action: 'print_tugasan',
+        timestamp: new Date().toISOString(),
+      });
+      if (store.accessLogs.length > 500) {
+        store.accessLogs = store.accessLogs.slice(-500);
+      }
+      saveStore(store);
+
+      res.json({ authorized: true });
+    }
+  );
+
+  app.post(
+    '/api/cus/:cuId/tugasan',
+    requireAuth,
+    requireApproved,
+    requireRole(['pengajar', 'admin', 'master_admin']),
+    (req: AuthenticatedRequest, res: Response) => {
+      const store = loadStore();
+      const cu = store.cus.find((c) => c.id === req.params.cuId);
+      if (!cu) {
+        res.status(404).json({ error: 'CU tidak dijumpai.' });
+        return;
+      }
+      const level = store.levels.find((l) => l.id === cu.levelId);
+      const body = req.body as Record<string, unknown>;
+      const title = typeof body.title === 'string' ? body.title.trim().slice(0, 160) : '';
+      const paperCode = typeof body.paperCode === 'string' ? body.paperCode.trim().slice(0, 80) : '';
+      const setCode = typeof body.setCode === 'string' ? body.setCode.trim().slice(0, 24) : '';
+      if (!title || !paperCode) {
+        res.status(400).json({ error: 'Tajuk dan No. Kod Kertas Tugasan diperlukan.' });
+        return;
+      }
+
+      const rawQuestions = Array.isArray(body.questions) ? body.questions : [];
+      const paperId = `tug-${crypto.randomUUID().slice(0, 8)}`;
+      const questions: TugasanQuestion[] = rawQuestions
+        .filter((q): q is Record<string, unknown> => Boolean(q) && typeof q === 'object')
+        .slice(0, 30)
+        .map((q, idx) => ({
+          id:
+            typeof q.id === 'string' && q.id.trim()
+              ? q.id.trim().slice(0, 48)
+              : `${paperId}-q${idx + 1}`,
+          numberLabel: `${idx + 1}.`,
+          prompt: typeof q.prompt === 'string' ? q.prompt.trim().slice(0, 600) : '',
+          subPrompts: Array.isArray(q.subPrompts)
+            ? q.subPrompts
+                .filter((sp): sp is string => typeof sp === 'string' && sp.trim().length > 0)
+                .map((sp) => sp.trim().slice(0, 300))
+            : undefined,
+          maxMarks:
+            typeof q.maxMarks === 'number' && Number.isFinite(q.maxMarks)
+              ? Math.max(1, Math.min(50, Math.round(q.maxMarks)))
+              : 4,
+          rubricHint: typeof q.rubricHint === 'string' ? q.rubricHint.trim().slice(0, 800) : '',
+        }))
+        .filter((q) => q.prompt.length > 0);
+
+      if (questions.length === 0) {
+        res.status(400).json({ error: 'Sekurang-kurangnya satu soalan diperlukan.' });
+        return;
+      }
+
+      const passingScore =
+        typeof body.passingScore === 'number' && Number.isFinite(body.passingScore)
+          ? Math.max(40, Math.min(100, Math.round(body.passingScore)))
+          : 60;
+
+      const paper: TugasanPaper = {
+        id: paperId,
+        cuId: cu.id,
+        setCode: setCode || `T(${store.tugasanPapers.filter((p) => p.cuId === cu.id).length + 1})`,
+        programCodeTitle:
+          typeof body.programCodeTitle === 'string' && body.programCodeTitle.trim()
+            ? body.programCodeTitle.trim().slice(0, 180)
+            : `${level?.code || 'NOSS'} — ${level?.title || ''}`.toUpperCase(),
+        tahap:
+          typeof body.tahap === 'string' && body.tahap.trim()
+            ? body.tahap.trim().slice(0, 20)
+            : level?.code.replace(/[^0-9]/g, '') || '2',
+        cuCodeTitle:
+          typeof body.cuCodeTitle === 'string' && body.cuCodeTitle.trim()
+            ? body.cuCodeTitle.trim().slice(0, 180)
+            : `${cu.code} ${cu.title}`.toUpperCase(),
+        workActivities: Array.isArray(body.workActivities)
+          ? body.workActivities
+              .filter((w): w is string => typeof w === 'string' && w.trim().length > 0)
+              .map((w) => w.trim().slice(0, 240))
+          : [`1. ${cu.title.toUpperCase()}`],
+        paperCode,
+        title: title.toUpperCase(),
+        purpose:
+          typeof body.purpose === 'string' && body.purpose.trim()
+            ? body.purpose.trim().slice(0, 600)
+            : `Kertas Tugasan ini bertujuan menilai kefahaman pelatih tentang ${title}.`,
+        instructions: [
+          'Jawab semua soalan di bawah dengan jelas dan tepat mengikut piawaian MS IEC 60364.',
+          'Jawapan akan disemak secara automatik oleh AI berpandukan nota rasmi.',
+          `Markah lulus minimum ialah ${passingScore}%. Kertas hanya boleh dicetak selepas LULUS.`,
+        ],
+        passingScore,
+        questions,
+        references: Array.isArray(body.references)
+          ? body.references
+              .filter((r): r is string => typeof r === 'string' && r.trim().length > 0)
+              .map((r) => r.trim().slice(0, 300))
+          : ['Jabatan Pembangunan Kemahiran (JPK) — NOSS F432-005.'],
+        sourceEbookId:
+          typeof body.sourceEbookId === 'string' && body.sourceEbookId.trim()
+            ? body.sourceEbookId.trim()
+            : undefined,
+        updatedAt: new Date().toISOString(),
+      };
+
+      store.tugasanPapers.push(paper);
+      saveStore(store);
+      res.status(201).json({ paper });
+    }
+  );
+
+  app.put(
+    '/api/tugasan/:paperId',
+    requireAuth,
+    requireApproved,
+    requireRole(['pengajar', 'admin', 'master_admin']),
+    (req: AuthenticatedRequest, res: Response) => {
+      const store = loadStore();
+      const paper = store.tugasanPapers.find((p) => p.id === req.params.paperId);
+      if (!paper) {
+        res.status(404).json({ error: 'Kertas Tugasan tidak dijumpai.' });
+        return;
+      }
+      const body = req.body as Record<string, unknown>;
+      if (typeof body.setCode === 'string' && body.setCode.trim()) {
+        paper.setCode = body.setCode.trim().slice(0, 24);
+      }
+      if (typeof body.paperCode === 'string' && body.paperCode.trim()) {
+        paper.paperCode = body.paperCode.trim().slice(0, 80);
+      }
+      if (typeof body.title === 'string' && body.title.trim()) {
+        paper.title = body.title.trim().slice(0, 160).toUpperCase();
+      }
+      if (typeof body.purpose === 'string' && body.purpose.trim()) {
+        paper.purpose = body.purpose.trim().slice(0, 600);
+      }
+      if (typeof body.passingScore === 'number' && Number.isFinite(body.passingScore)) {
+        paper.passingScore = Math.max(40, Math.min(100, Math.round(body.passingScore)));
+      }
+      if (Array.isArray(body.workActivities)) {
+        const cleaned = body.workActivities
+          .filter((w): w is string => typeof w === 'string' && w.trim().length > 0)
+          .map((w) => w.trim().slice(0, 240));
+        if (cleaned.length > 0) paper.workActivities = cleaned;
+      }
+      if (Array.isArray(body.references)) {
+        paper.references = body.references
+          .filter((r): r is string => typeof r === 'string' && r.trim().length > 0)
+          .map((r) => r.trim().slice(0, 300));
+      }
+      if (Array.isArray(body.questions)) {
+        const cleanedQs: TugasanQuestion[] = body.questions
+          .filter((q): q is Record<string, unknown> => Boolean(q) && typeof q === 'object')
+          .slice(0, 30)
+          .map((q, idx) => ({
+            id:
+              typeof q.id === 'string' && q.id.trim()
+                ? q.id.trim().slice(0, 48)
+                : `${paper.id}-q${idx + 1}-${Date.now().toString(36)}`,
+            numberLabel: `${idx + 1}.`,
+            prompt: typeof q.prompt === 'string' ? q.prompt.trim().slice(0, 600) : '',
+            subPrompts: Array.isArray(q.subPrompts)
+              ? q.subPrompts
+                  .filter((sp): sp is string => typeof sp === 'string' && sp.trim().length > 0)
+                  .map((sp) => sp.trim().slice(0, 300))
+              : undefined,
+            maxMarks:
+              typeof q.maxMarks === 'number' && Number.isFinite(q.maxMarks)
+                ? Math.max(1, Math.min(50, Math.round(q.maxMarks)))
+                : 4,
+            rubricHint: typeof q.rubricHint === 'string' ? q.rubricHint.trim().slice(0, 800) : '',
+          }))
+          .filter((q) => q.prompt.length > 0);
+        if (cleanedQs.length === 0) {
+          res.status(400).json({ error: 'Sekurang-kurangnya satu soalan sah diperlukan.' });
+          return;
+        }
+        paper.questions = cleanedQs;
+      }
+      paper.updatedAt = new Date().toISOString();
+      saveStore(store);
+      res.json({ paper });
+    }
+  );
+
+  app.delete(
+    '/api/tugasan/:paperId',
+    requireAuth,
+    requireApproved,
+    requireRole(['pengajar', 'admin', 'master_admin']),
+    (req: AuthenticatedRequest, res: Response) => {
+      const store = loadStore();
+      const idx = store.tugasanPapers.findIndex((p) => p.id === req.params.paperId);
+      if (idx === -1) {
+        res.status(404).json({ error: 'Kertas Tugasan tidak dijumpai.' });
+        return;
+      }
+      const [removed] = store.tugasanPapers.splice(idx, 1);
+      store.tugasanSubmissions = store.tugasanSubmissions.filter(
+        (s) => s.templateId !== removed.id
+      );
+      saveStore(store);
+      res.json({ ok: true });
+    }
+  );
 
   // --- User & Approval Management (Pengajar & Admin) ---
 

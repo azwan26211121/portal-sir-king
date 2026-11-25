@@ -16,6 +16,8 @@ import type {
   PublicUser,
   SopCheckProgress,
   TopicLevel,
+  TugasanPaper,
+  TugasanSubmission,
 } from './types.ts';
 
 type AppNavTab = 'workspace' | 'search' | 'trainees' | 'admin';
@@ -76,6 +78,8 @@ export default function App() {
   const [cus, setCus] = useState<CUModule[]>([]);
   const [sopProgress, setSopProgress] = useState<SopCheckProgress[]>([]);
   const [accessLogs, setAccessLogs] = useState<AccessLogEntry[]>([]);
+  const [tugasanPapers, setTugasanPapers] = useState<TugasanPaper[]>([]);
+  const [tugasanSubmissions, setTugasanSubmissions] = useState<TugasanSubmission[]>([]);
   const [loadingWorkspace, setLoadingWorkspace] = useState(false);
   const [workspaceError, setWorkspaceError] = useState<string | null>(null);
 
@@ -113,6 +117,8 @@ export default function App() {
         setCus(data.cus);
         setSopProgress(data.sopProgress);
         setAccessLogs(data.accessLogs);
+        setTugasanPapers(data.tugasanPapers || []);
+        setTugasanSubmissions(data.tugasanSubmissions || []);
         setSelectedLevelId((prev) => {
           if (prev && data.levels.some((l) => l.id === prev)) return prev;
           return data.levels[0]?.id || null;
@@ -169,6 +175,8 @@ export default function App() {
     setUser(null);
     setLevels([]);
     setCus([]);
+    setTugasanPapers([]);
+    setTugasanSubmissions([]);
     setSelectedLevelId(null);
     setSelectedCuId(null);
   }
@@ -209,7 +217,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#060d1f] text-slate-100 flex flex-col">
       {/* Top Bar: 3-zone contract styled to match SIRKING Royal Navy & Gold Banner */}
-      <header className="bg-[#041029]/95 backdrop-blur border-b border-[#1c366b] px-6 py-3.5 sticky top-0 z-30">
+      <header className="print:hidden bg-[#041029]/95 backdrop-blur border-b border-[#1c366b] px-6 py-3.5 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-8">
           {/* Zone 1: Brand Wordmark + Crest Logo */}
           <button
@@ -294,10 +302,10 @@ export default function App() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-8 space-y-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-8 space-y-6 print:p-0 print:max-w-none print:space-y-0">
         {/* Portal Banner Showcase — Full-bleed edge-to-edge, zero white space */}
         {navTab === 'workspace' && (
-          <div className="border border-[#264380] bg-[#041029] rounded-2xl shadow-2xl overflow-hidden">
+          <div className="print:hidden border border-[#264380] bg-[#041029] rounded-2xl shadow-2xl overflow-hidden">
             {!bannerFailed ? (
               <img
                 src={branding.bannerUrl}
@@ -316,7 +324,7 @@ export default function App() {
         )}
 
         {/* Contextual User Session Summary Bar (Clean unboxed metadata) */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-[#1a2f5c]">
+        <div className="print:hidden flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-[#1a2f5c]">
           <div>
             <h1 className="text-xl font-bold text-white tracking-tight">
               {branding.welcomePrefix}, {user.name}
@@ -338,7 +346,7 @@ export default function App() {
         </div>
 
         {workspaceError && (
-          <div role="alert" className="p-4 rounded-xl border border-red-800/70 bg-red-950/60 text-sm text-red-300">
+          <div role="alert" className="print:hidden p-4 rounded-xl border border-red-800/70 bg-red-950/60 text-sm text-red-300">
             {workspaceError}
           </div>
         )}
@@ -356,6 +364,8 @@ export default function App() {
                 levels={levels}
                 cus={cus}
                 sopProgress={sopProgress}
+                tugasanPapers={tugasanPapers}
+                tugasanSubmissions={tugasanSubmissions}
                 selectedLevelId={selectedLevelId}
                 selectedSection={selectedSection}
                 selectedCuId={selectedCuId}
@@ -371,6 +381,8 @@ export default function App() {
                 levels={levels}
                 cus={cus}
                 accessLogs={accessLogs}
+                tugasanPapers={tugasanPapers}
+                tugasanSubmissions={tugasanSubmissions}
                 onNavigateToCu={handleJumpToCu}
               />
             )}

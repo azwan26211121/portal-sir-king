@@ -1539,6 +1539,7 @@ export function AdminPanelView({
             <tbody className="divide-y divide-[#1a2f5c] text-xs">
               {cus.map((cu) => {
                 const lvl = levels.find((l) => l.id === cu.levelId);
+                const ebookCount = cu.ebookModules?.length || 0;
                 const sub1Docs =
                   (cu.teoriSub1.notaSlot ? 1 : 0) + (cu.teoriSub1.panduanSoalanSlot ? 1 : 0);
                 const sub2Docs =
@@ -1557,9 +1558,9 @@ export function AdminPanelView({
                       <button
                         type="button"
                         onClick={() => onJumpToCu(cu.levelId, 'teori', cu.id)}
-                        className={sub1Docs > 0 ? 'text-emerald-400 font-medium hover:underline' : 'text-[#f0cb63] hover:underline'}
+                        className={sub1Docs > 0 || ebookCount > 0 ? 'text-emerald-400 font-medium hover:underline' : 'text-[#f0cb63] hover:underline'}
                       >
-                        {sub1Docs}/2 Fail
+                        {sub1Docs}/2 Fail{ebookCount > 0 ? ` + ${ebookCount} E-Book` : ''}
                       </button>
                     </td>
                     <td className="py-3 px-3 font-mono tabular-nums">

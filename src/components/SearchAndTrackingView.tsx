@@ -5,27 +5,36 @@ import type {
   CUModule,
   LearningSection,
   TopicLevel,
+  TugasanPaper,
+  TugasanSubmission,
 } from '../types.ts';
 
 interface SearchAndTrackingViewProps {
   levels: TopicLevel[];
   cus: CUModule[];
   accessLogs: AccessLogEntry[];
+  tugasanPapers?: TugasanPaper[];
+  tugasanSubmissions?: TugasanSubmission[];
   onNavigateToCu: (levelId: string, section: LearningSection, cuId: string) => void;
 }
 
 const ACTION_LABELS: Record<AccessLogEntry['action'], string> = {
-  view_nota: 'Buka Nota Pembelajaran',
-  view_panduan: 'Buka Panduan Soalan',
+  view_nota: 'Buka Nota Pembelajaran (E-Book)',
+  view_panduan: 'Buka Panduan Soalan (E-Book)',
+  open_drive: 'Buka Folder Google Drive',
   open_form: 'Akses Latihan Google Form',
   view_sop: 'Semak SOP Bengkel',
   complete_sop: 'Lengkap Senarai Semak SOP',
+  submit_tugasan: 'Hantar Kertas Tugasan (Penandaan AI)',
+  print_tugasan: 'Cetak Kertas Tugasan (Lulus)',
 };
 
 export function SearchAndTrackingView({
   levels,
   cus,
   accessLogs,
+  tugasanPapers = [],
+  tugasanSubmissions = [],
   onNavigateToCu,
 }: SearchAndTrackingViewProps) {
   const [query, setQuery] = useState('');
@@ -65,12 +74,18 @@ export function SearchAndTrackingView({
         cu.description,
         cu.teoriSub1.notaSlot?.originalName || '',
         cu.teoriSub1.panduanSoalanSlot?.originalName || '',
+        cu.teoriSub1.googleDriveTitle || '',
         cu.teoriSub1.googleFormTitle,
         cu.teoriSub2.notaSlot?.originalName || '',
         cu.teoriSub2.panduanSoalanSlot?.originalName || '',
+        cu.teoriSub2.googleDriveTitle || '',
         cu.teoriSub2.googleFormTitle,
         cu.amaliSub1.sopDocSlot?.originalName || '',
         cu.amaliSub2.sopDocSlot?.originalName || '',
+        ...(cu.ebookModules || []).map((m) => `${m.code} ${m.title} ${m.file.originalName}`),
+        ...tugasanPapers
+          .filter((p) => p.cuId === cu.id)
+          .map((p) => `${p.setCode} ${p.paperCode} ${p.title}`),
         ...cu.amaliSub1.sopSteps.map((s) => `${s.category} ${s.title} ${s.instruction}`),
         ...cu.amaliSub2.sopSteps.map((s) => `${s.category} ${s.title} ${s.instruction}`),
       ]
@@ -78,7 +93,7 @@ export function SearchAndTrackingView({
         .toLowerCase();
       return haystack.includes(q);
     });
-  }, [cus, query, filterMode, levelMap]);
+  }, [cus, query, filterMode, levelMap, tugasanPapers]);
 
   const recentLogs = useMemo(() => [...accessLogs].reverse().slice(0, 25), [accessLogs]);
 
@@ -138,6 +153,7 @@ export function SearchAndTrackingView({
                 <th className="py-3 px-3">TEORI Sub 1</th>
                 <th className="py-3 px-3">TEORI Sub 2</th>
                 <th className="py-3 px-3">Google Form</th>
+                <th className="py-3 px-3">Tugasan (AI)</th>
                 <th className="py-3 px-3">AMALI (Sub 1 &amp; Sub 2)</th>
                 <th className="py-3 pl-3 text-right">Akses</th>
               </tr>
@@ -145,13 +161,14 @@ export function SearchAndTrackingView({
             <tbody className="divide-y divide-[#1a2f5c] text-sm">
               {filteredCUs.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-sm text-slate-400">
+                  <td colSpan={7} className="py-8 text-center text-sm text-slate-400">
                     Tiada rekod CU sepadan dengan carian anda.
                   </td>
                 </tr>
               ) : (
                 filteredCUs.map((cu) => {
                   const lvl = levelMap.get(cu.levelId);
+                  const ebookCount = cu.ebookModules?.length || 0;
                   const sub1Docs =
                     (cu.teoriSub1.notaSlot ? 1 : 0) + (cu.teoriSub1.panduanSoalanSlot ? 1 : 0);
                   const sub2Docs =
@@ -160,6 +177,12 @@ export function SearchAndTrackingView({
                     (cu.teoriSub1.googleFormUrl ? 1 : 0) + (cu.teoriSub2.googleFormUrl ? 1 : 0);
                   const amaliDocs =
                     (cu.amaliSub1.sopDocSlot ? 1 : 0) + (cu.amaliSub2.sopDocSlot ? 1 : 0);
+                  const cuPapers = tugasanPapers.filter((p) => p.cuId === cu.id);
+                  const cuPassedIds = new Set(
+                    tugasanSubmissions
+                      .filter((s) => s.cuId === cu.id && s.passed)
+                      .map((s) => s.templateId)
+                  );
                   return (
                     <tr key={cu.id} className="hover:bg-[#112247]/60">
                       <td className="py-3.5 pr-4">
@@ -173,12 +196,12 @@ export function SearchAndTrackingView({
                           type="button"
                           onClick={() => onNavigateToCu(cu.levelId, 'teori', cu.id)}
                           className={
-                            sub1Docs > 0
+                            sub1Docs > 0 || ebookCount > 0
                               ? 'text-emerald-400 hover:underline font-medium'
                               : 'text-slate-400 hover:underline'
                           }
                         >
-                          {sub1Docs}/2 Fail
+                          {sub1Docs}/2 Fail{ebookCount > 0 ? ` + ${ebookCount} E-Book` : ''}
                         </button>
                       </td>
                       <td className="py-3.5 px-3 text-xs font-mono tabular-nums">
@@ -205,6 +228,19 @@ export function SearchAndTrackingView({
                           }
                         >
                           {formsCount}/2 Borang
+                        </button>
+                      </td>
+                      <td className="py-3.5 px-3 text-xs font-mono tabular-nums">
+                        <button
+                          type="button"
+                          onClick={() => onNavigateToCu(cu.levelId, 'tugasan', cu.id)}
+                          className={
+                            cuPassedIds.size > 0
+                              ? 'text-emerald-400 hover:underline font-medium'
+                              : 'text-[#f0cb63] hover:underline'
+                          }
+                        >
+                          {cuPapers.length} Set ({cuPassedIds.size} Lulus)
                         </button>
                       </td>
                       <td className="py-3.5 px-3 text-xs font-mono tabular-nums">

@@ -11,6 +11,9 @@ import type {
   SubKey,
   TeacherOption,
   TopicLevel,
+  TugasanPaper,
+  TugasanQuestion,
+  TugasanSubmission,
   UserRole,
 } from '../types.ts';
 
@@ -212,6 +215,8 @@ export const api = {
   getWorkspace(token: string): Promise<{
     levels: TopicLevel[];
     cus: CUModule[];
+    tugasanPapers: TugasanPaper[];
+    tugasanSubmissions: TugasanSubmission[];
     sopProgress: SopCheckProgress[];
     accessLogs: AccessLogEntry[];
     teachers: TeacherOption[];
@@ -312,6 +317,36 @@ export const api = {
     );
   },
 
+  uploadCuEbook(
+    token: string,
+    cuId: string,
+    code: string,
+    title: string,
+    file: File
+  ): Promise<{ cu: CUModule }> {
+    const formData = new FormData();
+    formData.append('code', code);
+    formData.append('title', title);
+    formData.append('file', file);
+    return requestJson(
+      `/api/cus/${encodeURIComponent(cuId)}/ebooks`,
+      { method: 'POST', body: formData },
+      token
+    );
+  },
+
+  deleteCuEbook(
+    token: string,
+    cuId: string,
+    moduleId: string
+  ): Promise<{ cu: CUModule }> {
+    return requestJson(
+      `/api/cus/${encodeURIComponent(cuId)}/ebooks/${encodeURIComponent(moduleId)}`,
+      { method: 'DELETE' },
+      token
+    );
+  },
+
   async fetchProtectedFileBlob(token: string, fileId: string): Promise<Blob> {
     const res = await fetch(`/api/files/${encodeURIComponent(fileId)}`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -341,6 +376,23 @@ export const api = {
       {
         method: 'PUT',
         body: JSON.stringify({ subKey, googleFormUrl, googleFormTitle }),
+      },
+      token
+    );
+  },
+
+  updateGoogleDriveFolder(
+    token: string,
+    cuId: string,
+    subKey: SubKey,
+    googleDriveUrl: string,
+    googleDriveTitle: string
+  ): Promise<{ cu: CUModule }> {
+    return requestJson(
+      `/api/cus/${encodeURIComponent(cuId)}/google-drive`,
+      {
+        method: 'PUT',
+        body: JSON.stringify({ subKey, googleDriveUrl, googleDriveTitle }),
       },
       token
     );
@@ -390,6 +442,92 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ cuId, subKey, action }),
       },
+      token
+    );
+  },
+
+  submitTugasan(
+    token: string,
+    paperId: string,
+    answers: Record<string, string>
+  ): Promise<{ submission: TugasanSubmission }> {
+    return requestJson(
+      `/api/tugasan/${encodeURIComponent(paperId)}/submit`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ answers }),
+      },
+      token
+    );
+  },
+
+  authorizePrintTugasan(
+    token: string,
+    paperId: string,
+    submissionId?: string
+  ): Promise<{ authorized: boolean }> {
+    return requestJson(
+      `/api/tugasan/${encodeURIComponent(paperId)}/print-authorize`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ submissionId }),
+      },
+      token
+    );
+  },
+
+  createTugasanPaper(
+    token: string,
+    cuId: string,
+    payload: {
+      setCode: string;
+      paperCode: string;
+      title: string;
+      purpose: string;
+      passingScore: number;
+      workActivities: string[];
+      references: string[];
+      questions: TugasanQuestion[];
+    }
+  ): Promise<{ paper: TugasanPaper }> {
+    return requestJson(
+      `/api/cus/${encodeURIComponent(cuId)}/tugasan`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      },
+      token
+    );
+  },
+
+  updateTugasanPaper(
+    token: string,
+    paperId: string,
+    payload: Partial<{
+      setCode: string;
+      paperCode: string;
+      title: string;
+      purpose: string;
+      passingScore: number;
+      workActivities: string[];
+      references: string[];
+      questions: TugasanQuestion[];
+    }>
+  ): Promise<{ paper: TugasanPaper }> {
+    return requestJson(
+      `/api/tugasan/${encodeURIComponent(paperId)}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      },
+      token
+    );
+  },
+
+  deleteTugasanPaper(token: string, paperId: string): Promise<{ ok: boolean }> {
+    return requestJson(
+      `/api/tugasan/${encodeURIComponent(paperId)}`,
+      { method: 'DELETE' },
       token
     );
   },

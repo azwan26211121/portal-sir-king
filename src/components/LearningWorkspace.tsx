@@ -1,24 +1,33 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
   BookOpen,
   CheckSquare,
   ChevronRight,
   ClipboardCheck,
+  Download,
   ExternalLink,
+  FileCheck2,
   Folder,
+  FolderOpen,
+  HardDrive,
+  LayoutGrid,
   Link2,
+  List,
   Plus,
   RotateCcw,
   Save,
   ShieldAlert,
   Square,
   Trash2,
+  Upload,
   Wrench,
+  X,
 } from 'lucide-react';
 import { api, ApiError } from '../lib/api.ts';
 import type {
   CUModule,
+  EbookNoteModule,
   FileSlotType,
   LearningSection,
   PublicUser,
@@ -27,8 +36,12 @@ import type {
   SopStep,
   SubKey,
   TopicLevel,
+  TugasanPaper,
+  TugasanSubmission,
 } from '../types.ts';
 import { DocumentSlotCard } from './DocumentSlotCard.tsx';
+import { TeoriEbookReader } from './TeoriEbookReader.tsx';
+import { TugasanWorkspace } from './TugasanWorkspace.tsx';
 
 interface LearningWorkspaceProps {
   token: string;
@@ -36,6 +49,8 @@ interface LearningWorkspaceProps {
   levels: TopicLevel[];
   cus: CUModule[];
   sopProgress: SopCheckProgress[];
+  tugasanPapers: TugasanPaper[];
+  tugasanSubmissions: TugasanSubmission[];
   selectedLevelId: string | null;
   selectedSection: LearningSection;
   selectedCuId: string | null;
@@ -58,12 +73,34 @@ function toEmbedGoogleFormUrl(rawUrl: string): string {
   }
 }
 
+function extractGoogleDriveFolderId(rawUrl: string): string | null {
+  try {
+    const parsed = new URL(rawUrl);
+    if (parsed.hostname.toLowerCase() !== 'drive.google.com') return null;
+    const folderMatch = parsed.pathname.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+    if (folderMatch && folderMatch[1]) return folderMatch[1];
+    const idParam = parsed.searchParams.get('id');
+    if (idParam && /^[a-zA-Z0-9_-]+$/.test(idParam)) return idParam;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function toEmbedGoogleDriveFolderUrl(rawUrl: string, mode: 'list' | 'grid'): string | null {
+  const folderId = extractGoogleDriveFolderId(rawUrl);
+  if (!folderId) return null;
+  return `https://drive.google.com/embeddedfolderview?id=${encodeURIComponent(folderId)}#${mode}`;
+}
+
 export function LearningWorkspace({
   token,
   user,
   levels,
   cus,
   sopProgress,
+  tugasanPapers,
+  tugasanSubmissions,
   selectedLevelId,
   selectedSection,
   selectedCuId,
@@ -107,6 +144,13 @@ export function LearningWorkspace({
   const [savingForm, setSavingForm] = useState(false);
   const [formMsg, setFormMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
 
+  // Google Drive Folder Editor state
+  const [driveUrlInput, setDriveUrlInput] = useState('');
+  const [driveTitleInput, setDriveTitleInput] = useState('');
+  const [savingDrive, setSavingDrive] = useState(false);
+  const [driveMsg, setDriveMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+  const [driveViewMode, setDriveViewMode] = useState<'list' | 'grid'>('list');
+
   // SOP Editor state
   const [editingSop, setEditingSop] = useState(false);
   const [draftSopSteps, setDraftSopSteps] = useState<SopStep[]>([]);
@@ -120,18 +164,39 @@ export function LearningWorkspace({
   const [newCuDesc, setNewCuDesc] = useState('');
   const [addingCu, setAddingCu] = useState(false);
 
+  // Multi-module E-Book Kertas Penerangan shelf state
+  const ebookFileRef = useRef<HTMLInputElement | null>(null);
+  const [activeEbookId, setActiveEbookId] = useState<string | null>(null);
+  const [showAddEbook, setShowAddEbook] = useState(false);
+  const [ebookCodeInput, setEbookCodeInput] = useState('');
+  const [ebookTitleInput, setEbookTitleInput] = useState('');
+  const [ebookSelectedFile, setEbookSelectedFile] = useState<File | null>(null);
+  const [uploadingEbook, setUploadingEbook] = useState(false);
+  const [confirmDeleteEbookId, setConfirmDeleteEbookId] = useState<string | null>(null);
+  const [ebookMsg, setEbookMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+
   useEffect(() => {
     if (activeTeoriSub) {
       setFormUrlInput(activeTeoriSub.googleFormUrl || '');
       setFormTitleInput(activeTeoriSub.googleFormTitle || '');
+      setDriveUrlInput(activeTeoriSub.googleDriveUrl || '');
+      setDriveTitleInput(activeTeoriSub.googleDriveTitle || '');
     }
     if (activeAmaliSub) {
       setDraftSopSteps(activeAmaliSub.sopSteps);
     }
     setEditingSop(false);
     setFormMsg(null);
+    setDriveMsg(null);
     setSopMsg(null);
   }, [activeCU?.id, selectedSub, activeTeoriSub, activeAmaliSub]);
+
+  useEffect(() => {
+    setActiveEbookId(null);
+    setConfirmDeleteEbookId(null);
+    setEbookMsg(null);
+    setShowAddEbook(false);
+  }, [activeCU?.id]);
 
   const userSopChecked = useMemo(() => {
     if (!activeCU) return [];
@@ -195,6 +260,37 @@ export function LearningWorkspace({
     }
   }
 
+  async function handleSaveGoogleDrive(e: React.FormEvent) {
+    e.preventDefault();
+    if (!activeCU) return;
+    setSavingDrive(true);
+    setDriveMsg(null);
+    try {
+      await api.updateGoogleDriveFolder(
+        token,
+        activeCU.id,
+        selectedSub,
+        driveUrlInput,
+        driveTitleInput
+      );
+      await onRefreshWorkspace();
+      setDriveMsg({
+        type: 'ok',
+        text: `Pautan Folder Google Drive (${selectedSub === 'sub1' ? 'Sub 1' : 'Sub 2'}) berjaya dikemas kini.`,
+      });
+    } catch (err) {
+      setDriveMsg({
+        type: 'err',
+        text:
+          err instanceof ApiError
+            ? err.message
+            : 'Gagal menyimpan pautan Folder Google Drive.',
+      });
+    } finally {
+      setSavingDrive(false);
+    }
+  }
+
   async function handleSaveSopSteps() {
     if (!activeCU) return;
     setSavingSop(true);
@@ -239,6 +335,77 @@ export function LearningWorkspace({
     }
   }
 
+  async function handleUploadEbook(e: React.FormEvent) {
+    e.preventDefault();
+    if (!activeCU || !ebookSelectedFile) {
+      setEbookMsg({ type: 'err', text: 'Sila pilih fail PDF atau Word untuk dimuat naik.' });
+      return;
+    }
+    setUploadingEbook(true);
+    setEbookMsg(null);
+    try {
+      await api.uploadCuEbook(
+        token,
+        activeCU.id,
+        ebookCodeInput.trim(),
+        ebookTitleInput.trim(),
+        ebookSelectedFile
+      );
+      setEbookCodeInput('');
+      setEbookTitleInput('');
+      setEbookSelectedFile(null);
+      if (ebookFileRef.current) ebookFileRef.current.value = '';
+      setShowAddEbook(false);
+      await onRefreshWorkspace();
+      setEbookMsg({ type: 'ok', text: 'Modul E-Book nota berjaya dimuat naik.' });
+    } catch (err) {
+      setEbookMsg({
+        type: 'err',
+        text: err instanceof ApiError ? err.message : 'Gagal memuat naik modul E-Book.',
+      });
+    } finally {
+      setUploadingEbook(false);
+    }
+  }
+
+  async function handleDeleteEbook(moduleId: string) {
+    if (!activeCU) return;
+    setEbookMsg(null);
+    try {
+      await api.deleteCuEbook(token, activeCU.id, moduleId);
+      if (activeEbookId === moduleId) setActiveEbookId(null);
+      setConfirmDeleteEbookId(null);
+      await onRefreshWorkspace();
+    } catch (err) {
+      setEbookMsg({
+        type: 'err',
+        text: err instanceof ApiError ? err.message : 'Gagal memadam modul E-Book.',
+      });
+    }
+  }
+
+  async function handleDownloadEbook(mod: EbookNoteModule) {
+    if (!activeCU) return;
+    setEbookMsg(null);
+    try {
+      const blob = await api.fetchProtectedFileBlob(token, mod.file.id);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = mod.file.originalName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      api.logAccess(token, activeCU.id, 'view_nota', selectedSub).catch(() => {});
+    } catch (err) {
+      setEbookMsg({
+        type: 'err',
+        text: err instanceof ApiError ? err.message : 'Gagal memuat turun fail E-Book.',
+      });
+    }
+  }
+
   if (!activeLevel) {
     return (
       <div className="bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-10 text-center">
@@ -266,7 +433,7 @@ export function LearningWorkspace({
   return (
     <div className="space-y-6">
       {/* Stage 1: Pilih Topik / Tahap */}
-      <section aria-labelledby="stage-level-heading" className="bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-6">
+      <section aria-labelledby="stage-level-heading" className="print:hidden bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
           <div>
             <p className="text-xs font-medium text-[#f0cb63]">Langkah 1 · Pilih Topik / Tahap</p>
@@ -281,7 +448,7 @@ export function LearningWorkspace({
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
           {levels.map((lvl) => {
             const count = cus.filter((c) => c.levelId === lvl.id).length;
             const isSelected = activeLevel.id === lvl.id;
@@ -320,10 +487,422 @@ export function LearningWorkspace({
             );
           })}
         </div>
+
+        {activeLevel.id === 'lvl-2' && (
+          <div className="mt-5 pt-5 border-t border-[#1a2f5c] space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2">
+              <div>
+                <p className="text-xs font-mono font-semibold text-[#f0cb63]">
+                  NOSS F432-005-2:2019 · Struktur 800 Jam (720j Kompetensi + 80j Core Abilities)
+                </p>
+                <p className="mt-0.5 text-xs text-slate-300">
+                  Peralihan daripada kurikulum terdahulu EE-320-2:2012 kepada pematuhan{' '}
+                  <span className="text-slate-100 font-medium">MS IEC 60364</span> &amp;{' '}
+                  <span className="text-slate-100 font-medium">Peraturan-Peraturan Elektrik 1994</span>.
+                </p>
+              </div>
+              <span className="text-[11px] font-mono text-slate-400 shrink-0">
+                Klik mana-mana CU di bawah untuk terus buka modul
+              </span>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {[
+                {
+                  cuId: 'cu-201',
+                  code: 'C01',
+                  weight: '15%',
+                  name: 'Single Phase Drawing',
+                  focus: 'Lukisan titik/susun atur, skematik & anggaran beban/bahan sebelum menarik kabel.',
+                },
+                {
+                  cuId: 'cu-202',
+                  code: 'C02',
+                  weight: '55%',
+                  name: 'Single Phase Wiring',
+                  focus: 'Teras Tahap 2: containment/konduit/trunking, kabel, DB, MCB/RCCB/RCD & pembumian.',
+                },
+                {
+                  cuId: 'cu-203',
+                  code: 'C03',
+                  weight: '15%',
+                  name: 'Single Phase System Maintenance',
+                  focus: 'Pemeriksaan visual, ujian mati/hidup, diagnostik kerosakan & pembaikan litar.',
+                },
+                {
+                  cuId: 'cu-204',
+                  code: 'C04',
+                  weight: '15%',
+                  name: 'Single Phase Motor & Control',
+                  focus: 'Jenis/sambungan motor satu fasa, pemula DOL, litar perlindungan & semakan operasi.',
+                },
+              ].map((item) => {
+                const exists = levelCUs.some((c) => c.id === item.cuId);
+                const selected = activeCU?.id === item.cuId;
+                return (
+                  <button
+                    key={item.code}
+                    type="button"
+                    disabled={!exists}
+                    onClick={() => exists && onSelectCu(item.cuId)}
+                    className={`text-left p-3.5 rounded-lg border transition-colors ${
+                      selected
+                        ? 'bg-[#17356e]/70 border-[#e5b94c]'
+                        : 'bg-[#071024] border-[#1a2f5c] hover:border-[#2a4a8a]'
+                    } disabled:opacity-60`}
+                  >
+                    <div className="flex items-center justify-between gap-2 text-xs font-mono">
+                      <span className="font-bold text-[#f0cb63]">{item.code}</span>
+                      <span className="font-semibold text-emerald-400 tabular-nums">
+                        {item.weight}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs font-semibold text-white">{item.name}</p>
+                    <p className="mt-1 text-[11px] text-slate-400 leading-relaxed">
+                      {item.focus}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-3 text-xs text-slate-300 bg-[#071024] border border-[#1a2f5c] rounded-lg p-3.5">
+              <div>
+                <p className="font-semibold text-white">Turutan C01 + C02</p>
+                <p className="mt-0.5 text-[11px] text-slate-400 leading-relaxed">
+                  Kaitkan lukisan &amp; logik beban C01 terus ke bay amali C02 bagi mengelakkan ralat kadaran MCB/RCCB, label DB, dan pembumian MS IEC 60364.
+                </p>
+              </div>
+              <div>
+                <p className="font-semibold text-white">Pemberat 55% pada C02</p>
+                <p className="mt-0.5 text-[11px] text-slate-400 leading-relaxed">
+                  Kekemasan kerja, tork pengetatan terminal, integriti penebatan, pembumian tepat, dan pengasingan LOTO selamat menentukan kesediaan pelatih.
+                </p>
+              </div>
+              <div>
+                <p className="font-semibold text-white">Integrasi C03 &amp; C04</p>
+                <p className="mt-0.5 text-[11px] text-slate-400 leading-relaxed">
+                  Gabungkan rutin pengujian C03 bersama bay pendawaian C02 dan panel pemula motor C04 agar pengujian menjadi sebahagian daripada kerja sebenar.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeLevel.id === 'lvl-3' && (
+          <div className="mt-5 pt-5 border-t border-[#1a2f5c] space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2">
+              <div>
+                <p className="text-xs font-mono font-semibold text-[#f0cb63]">
+                  NOSS F432-005-3:2019 · 7 Unit Kompetensi Teras (Elektrik Tiga Fasa, BAS &amp; Penyeliaan)
+                </p>
+                <p className="mt-0.5 text-xs text-slate-300">
+                  Peningkatan daripada sistem satu fasa ke pemasangan komersial/industri tiga fasa, pengujian &amp; pentauliahan rasmi (<span className="font-mono text-slate-100">Z<sub>s</sub></span>), automasi bangunan, serta penyeliaan tapak.
+                </p>
+              </div>
+              <span className="text-[11px] font-mono text-slate-400 shrink-0">
+                Klik mana-mana CU di bawah untuk terus buka modul
+              </span>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {[
+                {
+                  cuId: 'cu-301',
+                  code: 'C01',
+                  tag: 'Lukisan 3-Fasa',
+                  name: 'Three Phase Drawing',
+                  focus: 'Pelan susun atur 3-fasa, skematik three-line, pengimbangan fasa, MD & saiz kabel/perlindungan.',
+                },
+                {
+                  cuId: 'cu-302',
+                  code: 'C02',
+                  tag: 'Pendawaian 3-Fasa',
+                  name: 'Three Phase Wiring',
+                  focus: 'Trunking/cable tray, DB 3-fasa, SSB, busbar, switchgear & pembumian MS IEC 60364.',
+                },
+                {
+                  cuId: 'cu-303',
+                  code: 'C03',
+                  tag: 'Penyelenggaraan',
+                  name: 'Three Phase System Maintenance',
+                  focus: 'Rutin pencegahan & pembetulan, diagnostik kerosakan 3-fasa & pembaikan komponen.',
+                },
+                {
+                  cuId: 'cu-304',
+                  code: 'C04',
+                  tag: 'Motor & Kawalan',
+                  name: 'Three Phase Motor & Control',
+                  focus: 'Penamatan Star/Delta, litar kawalan & pemula DOL, Star-Delta, Forward-Reverse + interlock.',
+                },
+                {
+                  cuId: 'cu-305',
+                  code: 'C05',
+                  tag: 'Pentauliahan (T&C)',
+                  name: '3-Phase Testing & Commissioning',
+                  focus: 'Ujian kesinambungan, penebatan, kekutuban, elektrod bumi, galangan Zs & rekod ujian rasmi.',
+                },
+                {
+                  cuId: 'cu-306',
+                  code: 'C06',
+                  tag: 'Automasi (BAS)',
+                  name: 'Building Automation System',
+                  focus: 'Pencahayaan pintar & kawalan bangunan: pendawaian bus, penderia, penggerak & pentauliahan.',
+                },
+                {
+                  cuId: 'cu-307',
+                  code: 'C07',
+                  tag: 'Penyeliaan',
+                  name: 'Installation & Maintenance Supervisory',
+                  focus: 'Jadual kerja, anggaran bahan/BOQ, toolbox briefing, OSHA & memimpin juruteknik Tahap 2.',
+                },
+              ].map((item) => {
+                const exists = levelCUs.some((c) => c.id === item.cuId);
+                const selected = activeCU?.id === item.cuId;
+                return (
+                  <button
+                    key={item.code}
+                    type="button"
+                    disabled={!exists}
+                    onClick={() => exists && onSelectCu(item.cuId)}
+                    className={`text-left p-3.5 rounded-lg border transition-colors ${
+                      selected
+                        ? 'bg-[#17356e]/70 border-[#e5b94c]'
+                        : 'bg-[#071024] border-[#1a2f5c] hover:border-[#2a4a8a]'
+                    } disabled:opacity-60`}
+                  >
+                    <div className="flex items-center justify-between gap-2 text-xs font-mono">
+                      <span className="font-bold text-[#f0cb63]">{item.code}</span>
+                      <span className="text-[11px] font-medium text-emerald-400">
+                        {item.tag}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs font-semibold text-white">{item.name}</p>
+                    <p className="mt-1 text-[11px] text-slate-400 leading-relaxed">
+                      {item.focus}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {activeLevel.id === 'lvl-4' && (
+          <div className="mt-5 pt-5 border-t border-[#1a2f5c] space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2">
+              <div>
+                <p className="text-xs font-mono font-semibold text-[#f0cb63]">
+                  NOSS F432-005-4:2019 (DKM Tahap 4 · JPK) · Pengagihan Voltan Rendah Industri (&ge;100A hingga 1kV)
+                </p>
+                <p className="mt-0.5 text-xs text-slate-300">
+                  9 Unit Kompetensi Teras (C01–C09) + 1 Unit Elektif (boleh ditambah oleh Admin/Pengajar menerusi <span className="font-mono text-slate-100">Tambah CU</span>).
+                </p>
+              </div>
+              <span className="text-[11px] font-mono text-slate-400 shrink-0">
+                Klik mana-mana CU di bawah untuk terus buka modul
+              </span>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {[
+                {
+                  cuId: 'cu-401',
+                  code: 'C01',
+                  tag: 'MSB >100A–1kV',
+                  name: 'LV Main Switch Board (MSB)',
+                  focus: 'Pemasangan dan penyelenggaraan papan suis utama berkadaran >100A hingga <1kV.',
+                },
+                {
+                  cuId: 'cu-402',
+                  code: 'C02',
+                  tag: 'Transformer',
+                  name: 'Distribution Transformer Maintenance',
+                  focus: 'Pemeriksaan dan senggaraan pencegahan pada transformer pengagihan.',
+                },
+                {
+                  cuId: 'cu-403',
+                  code: 'C03',
+                  tag: 'Bawah Tanah',
+                  name: 'LV Underground Cable System',
+                  focus: 'Kerja merentang, jointing, penamatan dan pengujian kabel bawah tanah LV.',
+                },
+                {
+                  cuId: 'cu-404',
+                  code: 'C04',
+                  tag: 'Talian Atas',
+                  name: 'LV Overhead System',
+                  focus: 'Pemasangan dan penyelenggaraan talian pengagihan atas voltan rendah.',
+                },
+                {
+                  cuId: 'cu-405',
+                  code: 'C05',
+                  tag: 'ACMV',
+                  name: 'ACMV System Troubleshoot',
+                  focus: 'Diagnostik kerosakan elektrik pada sistem ACMV komersial & industri.',
+                },
+                {
+                  cuId: 'cu-406',
+                  code: 'C06',
+                  tag: 'Soft Starter',
+                  name: 'Soft Starter Installation & Maint.',
+                  focus: 'Pemasangan, konfigurasi parameter dan penyelenggaraan pemula lembut motor.',
+                },
+                {
+                  cuId: 'cu-407',
+                  code: 'C07',
+                  tag: 'Penyeliaan Projek',
+                  name: 'Electrical Project Supervision',
+                  focus: 'Pengurusan pelaksanaan tapak, pematuhan keselamatan dan pasukan teknikal.',
+                },
+                {
+                  cuId: 'cu-408',
+                  code: 'C08',
+                  tag: 'PLC Industri',
+                  name: 'PLC Installation',
+                  focus: 'Pendawaian dan pemasangan sistem Programmable Logic Controller (PLC).',
+                },
+                {
+                  cuId: 'cu-409',
+                  code: 'C09',
+                  tag: 'Pembumian & Kilat',
+                  name: 'LV Earthing System & Testing',
+                  focus: 'Rekabentuk, pemasangan dan ujian grid pembumian industri & perlindungan kilat.',
+                },
+              ].map((item) => {
+                const exists = levelCUs.some((c) => c.id === item.cuId);
+                const selected = activeCU?.id === item.cuId;
+                return (
+                  <button
+                    key={item.code}
+                    type="button"
+                    disabled={!exists}
+                    onClick={() => exists && onSelectCu(item.cuId)}
+                    className={`text-left p-3.5 rounded-lg border transition-colors ${
+                      selected
+                        ? 'bg-[#17356e]/70 border-[#e5b94c]'
+                        : 'bg-[#071024] border-[#1a2f5c] hover:border-[#2a4a8a]'
+                    } disabled:opacity-60`}
+                  >
+                    <div className="flex items-center justify-between gap-2 text-xs font-mono">
+                      <span className="font-bold text-[#f0cb63]">{item.code}</span>
+                      <span className="text-[11px] font-medium text-emerald-400">
+                        {item.tag}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs font-semibold text-white">{item.name}</p>
+                    <p className="mt-1 text-[11px] text-slate-400 leading-relaxed">
+                      {item.focus}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {activeLevel.id === 'lvl-5' && (
+          <div className="mt-5 pt-5 border-t border-[#1a2f5c] space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2">
+              <div>
+                <p className="text-xs font-mono font-semibold text-[#f0cb63]">
+                  NOSS F432-005-5:2019 (DLKM Tahap 5 · JPK) · Pengagihan &amp; Penjanaan Kuasa Voltan Rendah
+                </p>
+                <p className="mt-0.5 text-xs text-slate-300">
+                  Peringkat pensijilan tertinggi voltan rendah: 7 Unit Kompetensi Teras (C01–C07) + 1 Unit Elektif (boleh ditambah menerusi <span className="font-mono text-slate-100">Tambah CU</span>).
+                </p>
+              </div>
+              <span className="text-[11px] font-mono text-slate-400 shrink-0">
+                Klik mana-mana CU di bawah untuk terus buka modul
+              </span>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {[
+                {
+                  cuId: 'cu-501',
+                  code: 'C01',
+                  tag: 'Perlindungan LV',
+                  name: 'LV Protection Devices',
+                  focus: 'Pemasangan, pengujian dan senggaraan geganti perlindungan serta sistem perlindungan litar LV.',
+                },
+                {
+                  cuId: 'cu-502',
+                  code: 'C02',
+                  tag: 'Penjana Diesel',
+                  name: 'LV Diesel Generator O&M',
+                  focus: 'Operasi dan penyelenggaraan set penjana diesel tunggu sedia (standby) & utama (prime).',
+                },
+                {
+                  cuId: 'cu-503',
+                  code: 'C03',
+                  tag: 'Penyegerakan',
+                  name: 'LV Generator Synchronising',
+                  focus: 'Pengurusan penyegerakan selari penjana LV secara manual dan automatik.',
+                },
+                {
+                  cuId: 'cu-504',
+                  code: 'C04',
+                  tag: 'Solar PV',
+                  name: 'Photovoltaic Solar System O&M',
+                  focus: 'Operasi dan penyelenggaraan sistem penjanaan Solar PV sambungan grid & standalone.',
+                },
+                {
+                  cuId: 'cu-505',
+                  code: 'C05',
+                  tag: 'UPS & Bateri',
+                  name: 'UPS & Battery Charger Maint.',
+                  focus: 'Servis unit UPS industri, bank bateri dan sistem pengecas beban kritikal.',
+                },
+                {
+                  cuId: 'cu-506',
+                  code: 'C06',
+                  tag: 'Pengurusan Operasi',
+                  name: 'Electrical Operation Management',
+                  focus: 'Mengurus operasi elektrik fasiliti, pematuhan, jadual senggaraan dan bajet.',
+                },
+                {
+                  cuId: 'cu-507',
+                  code: 'C07',
+                  tag: 'Pengurusan Tenaga',
+                  name: 'Energy Management Operation',
+                  focus: 'Menjalankan audit tenaga, pemantauan kecekapan & pengurusan tenaga fasiliti.',
+                },
+              ].map((item) => {
+                const exists = levelCUs.some((c) => c.id === item.cuId);
+                const selected = activeCU?.id === item.cuId;
+                return (
+                  <button
+                    key={item.code}
+                    type="button"
+                    disabled={!exists}
+                    onClick={() => exists && onSelectCu(item.cuId)}
+                    className={`text-left p-3.5 rounded-lg border transition-colors ${
+                      selected
+                        ? 'bg-[#17356e]/70 border-[#e5b94c]'
+                        : 'bg-[#071024] border-[#1a2f5c] hover:border-[#2a4a8a]'
+                    } disabled:opacity-60`}
+                  >
+                    <div className="flex items-center justify-between gap-2 text-xs font-mono">
+                      <span className="font-bold text-[#f0cb63]">{item.code}</span>
+                      <span className="text-[11px] font-medium text-emerald-400">
+                        {item.tag}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs font-semibold text-white">{item.name}</p>
+                    <p className="mt-1 text-[11px] text-slate-400 leading-relaxed">
+                      {item.focus}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </section>
 
-      {/* Stage 2: Pilih Bahagian (Teori, Amali & SOP, Latihan) */}
-      <section aria-labelledby="stage-section-heading" className="bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-6">
+      {/* Stage 2: Pilih Bahagian (Teori, Amali & SOP, Latihan, Tugasan AI) */}
+      <section aria-labelledby="stage-section-heading" className="print:hidden bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <p className="text-xs font-medium text-[#f0cb63]">
@@ -334,12 +913,13 @@ export function LearningWorkspace({
             </h2>
           </div>
 
-          <div className="grid grid-cols-3 gap-1 p-1 bg-[#071024] border border-[#1a2f5c] rounded-lg">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 p-1 bg-[#071024] border border-[#1a2f5c] rounded-lg">
             {(
               [
                 { id: 'teori', label: 'Teori (2 Sub)', icon: BookOpen },
                 { id: 'amali_sop', label: 'Amali & SOP (2 Sub)', icon: Wrench },
                 { id: 'latihan', label: 'Latihan (2 Sub)', icon: ClipboardCheck },
+                { id: 'tugasan', label: 'Tugasan (AI)', icon: FileCheck2 },
               ] as const
             ).map((tab) => {
               const Icon = tab.icon;
@@ -365,9 +945,9 @@ export function LearningWorkspace({
       </section>
 
       {/* Stage 3: Pilih CU / Tajuk Khusus & Kandungan Terperingkat */}
-      <section aria-labelledby="stage-cu-heading" className="grid lg:grid-cols-12 gap-6 items-start">
+      <section aria-labelledby="stage-cu-heading" className="grid lg:grid-cols-12 gap-6 items-start print:block">
         {/* CU Selector Rail */}
-        <div className="lg:col-span-4 bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-5">
+        <div className="lg:col-span-4 print:hidden bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-5">
           <div className="flex items-center justify-between gap-2 pb-4 border-b border-[#1a2f5c]">
             <div>
               <p className="text-xs font-medium text-[#f0cb63]">Langkah 3 · Pilih CU</p>
@@ -440,6 +1020,7 @@ export function LearningWorkspace({
             ) : (
               levelCUs.map((cu) => {
                 const isActive = activeCU?.id === cu.id;
+                const ebookCount = cu.ebookModules?.length || 0;
                 const teoriDocsCount =
                   (cu.teoriSub1.notaSlot ? 1 : 0) +
                   (cu.teoriSub1.panduanSoalanSlot ? 1 : 0) +
@@ -449,6 +1030,13 @@ export function LearningWorkspace({
                   (cu.teoriSub1.googleFormUrl ? 1 : 0) + (cu.teoriSub2.googleFormUrl ? 1 : 0);
                 const sopStepsTotal =
                   cu.amaliSub1.sopSteps.length + cu.amaliSub2.sopSteps.length;
+                const cuPapers = tugasanPapers.filter((p) => p.cuId === cu.id);
+                const passedPaperIds = new Set(
+                  tugasanSubmissions
+                    .filter((s) => s.cuId === cu.id && s.userId === user.id && s.passed)
+                    .map((s) => s.templateId)
+                );
+                const passedCount = cuPapers.filter((p) => passedPaperIds.has(p.id)).length;
                 return (
                   <button
                     key={cu.id}
@@ -459,11 +1047,11 @@ export function LearningWorkspace({
                     }`}
                   >
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2 text-xs">
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
                         <span className="font-mono font-semibold text-[#f0cb63]">{cu.code}</span>
                         <span className="text-slate-600" aria-hidden="true">·</span>
                         <span className="text-slate-400 font-mono tabular-nums">
-                          Teori {teoriDocsCount}/4
+                          Teori {teoriDocsCount}/4{ebookCount > 0 ? ` · ${ebookCount} E-Book` : ''}
                         </span>
                         <span className="text-slate-600" aria-hidden="true">·</span>
                         <span className={formCount > 0 ? 'text-emerald-400 font-mono tabular-nums' : 'text-slate-500 font-mono tabular-nums'}>
@@ -472,7 +1060,7 @@ export function LearningWorkspace({
                       </div>
                       <p className="mt-1 text-sm font-semibold text-white">{cu.title}</p>
                       <p className="mt-0.5 text-xs text-slate-400 font-mono tabular-nums">
-                        Amali SOP: {sopStepsTotal} langkah (Sub 1 &amp; Sub 2)
+                        Amali SOP: {sopStepsTotal} langkah · Tugasan: {passedCount}/{cuPapers.length} Lulus
                       </p>
                     </div>
                     <ChevronRight
@@ -488,7 +1076,7 @@ export function LearningWorkspace({
         </div>
 
         {/* Selected CU Content Pane */}
-        <div className="lg:col-span-8">
+        <div className="lg:col-span-8 print:col-span-12">
           {!activeCU || !activeTeoriSub || !activeAmaliSub ? (
             <div className="bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-10 text-center">
               <Folder className="w-8 h-8 text-slate-400 mx-auto" />
@@ -497,14 +1085,14 @@ export function LearningWorkspace({
               </h3>
               <p className="mt-1.5 text-sm text-slate-300 max-w-md mx-auto">
                 Kandungan <span className="font-mono text-xs text-[#f0cb63]">TEORI/ (Sub 1 &amp; Sub 2)</span>, latihan Google Form,
-                dan panduan <span className="font-mono text-xs text-[#f0cb63]">AMALI/ (Sub 1 &amp; Sub 2)</span> akan dibuka selepas anda
-                memilih salah satu CU di sebelah kiri.
+                panduan <span className="font-mono text-xs text-[#f0cb63]">AMALI/ (Sub 1 &amp; Sub 2)</span>, dan{' '}
+                <span className="font-mono text-xs text-[#f0cb63]">KERTAS TUGASAN (AI)</span> akan dibuka selepas anda memilih salah satu CU di sebelah kiri.
               </p>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-6 print:space-y-0">
               {/* CU Header + 2-Sub Switcher */}
-              <div className="bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-6 space-y-5">
+              <div className="print:hidden bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-6 space-y-5">
                 <div>
                   <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400 font-mono">
                     <span>{activeLevel.code}</span>
@@ -516,6 +1104,8 @@ export function LearningWorkspace({
                         ? `AMALI/${subFolderCode}/`
                         : selectedSection === 'latihan'
                         ? `TEORI/${subFolderCode}/Latihan_Google_Form`
+                        : selectedSection === 'tugasan'
+                        ? 'TUGASAN_AI/Kertas_Tugasan_JPK'
                         : `TEORI/${subFolderCode}/`}
                     </span>
                   </div>
@@ -526,49 +1116,269 @@ export function LearningWorkspace({
                 </div>
 
                 {/* 2-Sub Selector */}
-                <div className="pt-4 border-t border-[#1a2f5c]">
-                  <p className="text-xs font-medium text-slate-400 mb-2">
-                    Pilih Sub Bahagian ({selectedSection === 'amali_sop' ? 'Amali & SOP' : selectedSection === 'latihan' ? 'Latihan Teori' : 'Teori'})
-                  </p>
-                  <div className="grid sm:grid-cols-2 gap-2 p-1 bg-[#071024] border border-[#1a2f5c] rounded-lg">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedSub('sub1')}
-                      className={`text-left px-3.5 py-2.5 rounded-md text-xs transition-colors ${
-                        selectedSub === 'sub1'
-                          ? 'bg-[#17356e] text-[#f0cb63] font-semibold shadow-sm'
-                          : 'text-slate-400 hover:text-slate-100'
-                      }`}
-                    >
-                      <span className="block truncate">{sub1Label}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedSub('sub2')}
-                      className={`text-left px-3.5 py-2.5 rounded-md text-xs transition-colors ${
-                        selectedSub === 'sub2'
-                          ? 'bg-[#17356e] text-[#f0cb63] font-semibold shadow-sm'
-                          : 'text-slate-400 hover:text-slate-100'
-                      }`}
-                    >
-                      <span className="block truncate">{sub2Label}</span>
-                    </button>
+                {selectedSection !== 'tugasan' && (
+                  <div className="pt-4 border-t border-[#1a2f5c]">
+                    <p className="text-xs font-medium text-slate-400 mb-2">
+                      Pilih Sub Bahagian ({selectedSection === 'amali_sop' ? 'Amali & SOP' : selectedSection === 'latihan' ? 'Latihan Teori' : 'Teori'})
+                    </p>
+                    <div className="grid sm:grid-cols-2 gap-2 p-1 bg-[#071024] border border-[#1a2f5c] rounded-lg">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedSub('sub1')}
+                        className={`text-left px-3.5 py-2.5 rounded-md text-xs transition-colors ${
+                          selectedSub === 'sub1'
+                            ? 'bg-[#17356e] text-[#f0cb63] font-semibold shadow-sm'
+                            : 'text-slate-400 hover:text-slate-100'
+                        }`}
+                      >
+                        <span className="block truncate">{sub1Label}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedSub('sub2')}
+                        className={`text-left px-3.5 py-2.5 rounded-md text-xs transition-colors ${
+                          selectedSub === 'sub2'
+                            ? 'bg-[#17356e] text-[#f0cb63] font-semibold shadow-sm'
+                            : 'text-slate-400 hover:text-slate-100'
+                        }`}
+                      >
+                        <span className="block truncate">{sub2Label}</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* SECTION: TEORI (Sub 1 / Sub 2) */}
               {selectedSection === 'teori' && (
                 <div className="space-y-5">
+                  {/* Koleksi E-Book Kertas Penerangan (Multi-Modul) */}
+                  {((activeCU.ebookModules && activeCU.ebookModules.length > 0) || canEdit) && (
+                    <div className="bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-6 space-y-5">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                        <div>
+                          <p className="text-xs font-mono text-slate-400 flex items-center gap-1.5">
+                            <BookOpen className="w-3.5 h-3.5 text-[#f0cb63]" />
+                            <span>
+                              {activeLevel.code} / {activeCU.code} / TEORI / Koleksi_Kertas_Penerangan_Ebook
+                            </span>
+                          </p>
+                          <h3 className="mt-1.5 text-base font-semibold text-white">
+                            Koleksi E-Book Kertas Penerangan ({activeCU.ebookModules?.length || 0} Modul)
+                          </h3>
+                          <p className="mt-1 text-sm text-slate-300">
+                            Nota pembelajaran rasmi mengikut siri Kertas Penerangan (KP). Klik{' '}
+                            <span className="text-[#f0cb63] font-medium">Baca E-Book</span> untuk paparan bacaan buku interaktif atau muat turun PDF.
+                          </p>
+                        </div>
+
+                        {canEdit && (
+                          <button
+                            type="button"
+                            onClick={() => setShowAddEbook(!showAddEbook)}
+                            className="px-3.5 py-2 text-xs font-semibold text-[#041434] bg-[#e5b94c] hover:bg-[#f0cb63] rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>{showAddEbook ? 'Tutup Borang' : 'Tambah Modul E-Book'}</span>
+                          </button>
+                        )}
+                      </div>
+
+                      {ebookMsg && (
+                        <p
+                          className={`text-xs p-3 rounded-lg border ${
+                            ebookMsg.type === 'ok'
+                              ? 'bg-emerald-950/60 border-emerald-700/60 text-emerald-300'
+                              : 'bg-red-950/60 border-red-800/70 text-red-300'
+                          }`}
+                        >
+                          {ebookMsg.text}
+                        </p>
+                      )}
+
+                      {showAddEbook && canEdit && (
+                        <form
+                          onSubmit={handleUploadEbook}
+                          className="p-4 rounded-lg bg-[#071024] border border-[#1a2f5c] space-y-3"
+                        >
+                          <div className="flex items-center gap-2 text-xs font-semibold text-white">
+                            <Upload className="w-4 h-4 text-[#f0cb63]" />
+                            <span>Muat Naik Nota E-Book Baharu ({activeCU.code})</span>
+                          </div>
+                          <div className="grid sm:grid-cols-3 gap-3">
+                            <div>
+                              <label className="block text-xs text-slate-300 mb-1">
+                                Kod Kertas (cth: KP(1/5))
+                              </label>
+                              <input
+                                type="text"
+                                value={ebookCodeInput}
+                                onChange={(e) => setEbookCodeInput(e.target.value)}
+                                placeholder="KP(1/5)"
+                                className="w-full px-3 py-2 text-xs font-mono border border-[#263f73] rounded-lg bg-[#0b1733] text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#e5b94c]"
+                              />
+                            </div>
+                            <div className="sm:col-span-2">
+                              <label className="block text-xs text-slate-300 mb-1">
+                                Tajuk Kertas Penerangan
+                              </label>
+                              <input
+                                type="text"
+                                required
+                                value={ebookTitleInput}
+                                onChange={(e) => setEbookTitleInput(e.target.value)}
+                                placeholder="cth: Keperluan Lukisan Elektrik Satu Fasa"
+                                className="w-full px-3 py-2 text-xs border border-[#263f73] rounded-lg bg-[#0b1733] text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#e5b94c]"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                            <input
+                              ref={ebookFileRef}
+                              type="file"
+                              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                              onChange={(e) => setEbookSelectedFile(e.target.files?.[0] || null)}
+                              className="text-xs text-slate-300 file:mr-3 file:px-3 file:py-1.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[#17356e] file:text-[#f0cb63] hover:file:bg-[#1e438a]"
+                            />
+                            <button
+                              type="submit"
+                              disabled={uploadingEbook}
+                              className="px-4 py-2 text-xs font-semibold text-[#041434] bg-[#e5b94c] hover:bg-[#f0cb63] disabled:opacity-60 rounded-lg flex items-center gap-1.5 whitespace-nowrap"
+                            >
+                              <Upload className="w-3.5 h-3.5" />
+                              <span>{uploadingEbook ? 'Memuat Naik...' : 'Muat Naik E-Book'}</span>
+                            </button>
+                          </div>
+                        </form>
+                      )}
+
+                      {activeCU.ebookModules && activeCU.ebookModules.length > 0 ? (
+                        <div className="divide-y divide-[#1a2f5c] border-t border-[#1a2f5c]">
+                          {activeCU.ebookModules.map((mod) => {
+                            const isOpen = activeEbookId === mod.id;
+                            const sizeMb = (mod.file.sizeBytes / (1024 * 1024)).toFixed(2);
+                            return (
+                              <div key={mod.id} className="py-4 first:pt-4 last:pb-0">
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                                  <div className="flex items-start gap-3 min-w-0">
+                                    <div className="px-2.5 py-2 rounded-lg bg-[#102045] border border-[#233d73] text-[#f0cb63] font-mono text-xs font-bold shrink-0">
+                                      {mod.code}
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="text-sm font-semibold text-white">
+                                        {mod.title}
+                                      </p>
+                                      <p className="mt-0.5 text-xs text-slate-400 font-mono truncate">
+                                        {mod.file.originalName} · {sizeMb} MB ·{' '}
+                                        {mod.file.extension.toUpperCase()}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const nextId = isOpen ? null : mod.id;
+                                        setActiveEbookId(nextId);
+                                        if (nextId) {
+                                          api
+                                            .logAccess(token, activeCU.id, 'view_nota', selectedSub)
+                                            .catch(() => {});
+                                        }
+                                      }}
+                                      className={
+                                        isOpen
+                                          ? 'px-3.5 py-2 text-xs font-semibold text-white bg-[#17356e] border border-[#e5b94c] rounded-lg flex items-center gap-1.5 whitespace-nowrap'
+                                          : 'px-3.5 py-2 text-xs font-semibold text-[#041434] bg-[#e5b94c] hover:bg-[#f0cb63] rounded-lg flex items-center gap-1.5 whitespace-nowrap'
+                                      }
+                                    >
+                                      {isOpen ? (
+                                        <>
+                                          <X className="w-3.5 h-3.5" />
+                                          <span>Tutup E-Book</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <BookOpen className="w-3.5 h-3.5" />
+                                          <span>Baca E-Book</span>
+                                        </>
+                                      )}
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDownloadEbook(mod)}
+                                      className="px-3 py-2 text-xs font-medium text-slate-200 bg-[#102045] border border-[#263f73] hover:bg-[#172e61] rounded-lg flex items-center gap-1.5 whitespace-nowrap"
+                                    >
+                                      <Download className="w-3.5 h-3.5" />
+                                      <span>Muat Turun</span>
+                                    </button>
+
+                                    {canEdit &&
+                                      (confirmDeleteEbookId === mod.id ? (
+                                        <div className="flex items-center gap-1.5">
+                                          <button
+                                            type="button"
+                                            onClick={() => handleDeleteEbook(mod.id)}
+                                            className="px-2.5 py-2 text-xs font-medium text-white bg-red-700 hover:bg-red-600 rounded-lg whitespace-nowrap"
+                                          >
+                                            Sahkan
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => setConfirmDeleteEbookId(null)}
+                                            className="px-2 py-2 text-xs text-slate-300 hover:text-white"
+                                          >
+                                            Batal
+                                          </button>
+                                        </div>
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          onClick={() => setConfirmDeleteEbookId(mod.id)}
+                                          className="px-2.5 py-2 text-xs font-medium text-red-300 bg-red-950/50 border border-red-800/60 hover:bg-red-900/60 rounded-lg flex items-center gap-1 whitespace-nowrap"
+                                          aria-label={`Padam ${mod.code}`}
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                      ))}
+                                  </div>
+                                </div>
+
+                                {isOpen && (
+                                  <TeoriEbookReader
+                                    token={token}
+                                    file={mod.file}
+                                    bookTitle={`${mod.code} — ${mod.title}`}
+                                    folderLabel={`${activeLevel.code} / ${activeCU.code} / TEORI / ${mod.code}`}
+                                    onClose={() => setActiveEbookId(null)}
+                                    onDownload={() => handleDownloadEbook(mod)}
+                                  />
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="pt-4 border-t border-[#1a2f5c] text-xs text-slate-400">
+                          Belum ada modul E-Book Kertas Penerangan dimuat naik untuk CU ini. Klik &ldquo;Tambah Modul E-Book&rdquo; di atas untuk memuat naik siri nota KP.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                   <DocumentSlotCard
                     token={token}
                     cuId={activeCU.id}
                     slotType={notaSlotType}
                     folderLabel={`${activeLevel.code} / ${activeCU.code} / TEORI / ${subFolderCode} / Nota_Pembelajaran`}
-                    slotTitle={`Nota Pembelajaran (${selectedSub === 'sub1' ? 'Sub 1' : 'Sub 2'})`}
-                    slotDescription={`${selectedSub === 'sub1' ? sub1Label : sub2Label} — Dokumen nota rujukan teori rasmi (.doc, .docx, .pdf).`}
+                    slotTitle={`Nota Pembelajaran — E-Book (${selectedSub === 'sub1' ? 'Sub 1' : 'Sub 2'})`}
+                    slotDescription={`${selectedSub === 'sub1' ? sub1Label : sub2Label} — Dokumen nota rujukan teori rasmi (.pdf, .docx, .doc) dipapar dalam mod bacaan E-Book.`}
                     file={activeTeoriSub.notaSlot}
                     canEdit={canEdit}
+                    viewerMode="ebook"
                     onUpdated={onRefreshWorkspace}
                     onAccessed={() =>
                       api.logAccess(token, activeCU.id, 'view_nota', selectedSub).catch(() => {})
@@ -580,15 +1390,208 @@ export function LearningWorkspace({
                     cuId={activeCU.id}
                     slotType={panduanSlotType}
                     folderLabel={`${activeLevel.code} / ${activeCU.code} / TEORI / ${subFolderCode} / Panduan_Soalan`}
-                    slotTitle={`Panduan Soalan (${selectedSub === 'sub1' ? 'Sub 1' : 'Sub 2'})`}
-                    slotDescription={`${selectedSub === 'sub1' ? sub1Label : sub2Label} — Panduan soalan teori atau skema latihan bertulis (.doc, .docx, .pdf).`}
+                    slotTitle={`Panduan Soalan — E-Book (${selectedSub === 'sub1' ? 'Sub 1' : 'Sub 2'})`}
+                    slotDescription={`${selectedSub === 'sub1' ? sub1Label : sub2Label} — Panduan soalan teori atau skema latihan bertulis (.pdf, .docx, .doc) dipapar dalam mod bacaan E-Book.`}
                     file={activeTeoriSub.panduanSoalanSlot}
                     canEdit={canEdit}
+                    viewerMode="ebook"
                     onUpdated={onRefreshWorkspace}
                     onAccessed={() =>
                       api.logAccess(token, activeCU.id, 'view_panduan', selectedSub).catch(() => {})
                     }
                   />
+
+                  {/* Pautan Folder Nota Google Drive */}
+                  <div className="bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-6 space-y-5">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                      <div>
+                        <p className="text-xs font-mono text-slate-400 flex items-center gap-1.5">
+                          <HardDrive className="w-3.5 h-3.5 text-[#f0cb63]" />
+                          <span>
+                            {activeLevel.code} / {activeCU.code} / TEORI / {subFolderCode} / Google_Drive_Folder
+                          </span>
+                        </p>
+                        <h3 className="mt-1.5 text-base font-semibold text-white">
+                          {activeTeoriSub.googleDriveTitle ||
+                            `Folder Nota Google Drive (${selectedSub === 'sub1' ? 'Sub 1' : 'Sub 2'})`}
+                        </h3>
+                        <p className="mt-1 text-sm text-slate-300">
+                          Akses himpunan fail nota tambahan terus daripada folder Google Drive yang dipautkan untuk sub topik ini.
+                        </p>
+                      </div>
+
+                      {activeTeoriSub.googleDriveUrl ? (
+                        <a
+                          href={activeTeoriSub.googleDriveUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() =>
+                            api.logAccess(token, activeCU.id, 'open_drive', selectedSub).catch(() => {})
+                          }
+                          className="px-4 py-2 text-xs font-semibold text-[#041434] bg-[#e5b94c] hover:bg-[#f0cb63] rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap shrink-0"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          <span>Buka Folder Google Drive</span>
+                        </a>
+                      ) : (
+                        <span className="text-xs font-medium text-slate-400 shrink-0">
+                          Belum Dipautkan
+                        </span>
+                      )}
+                    </div>
+
+                    {canEdit && (
+                      <form
+                        onSubmit={handleSaveGoogleDrive}
+                        className="p-4 rounded-lg bg-[#071024] border border-[#1a2f5c] space-y-3"
+                      >
+                        <div className="flex items-center gap-2 text-xs font-semibold text-white">
+                          <FolderOpen className="w-4 h-4 text-[#f0cb63]" />
+                          <span>
+                            Pautan Folder Nota Google Drive ({selectedSub === 'sub1' ? 'Sub 1' : 'Sub 2'})
+                          </span>
+                        </div>
+
+                        {driveMsg && (
+                          <p
+                            className={`text-xs ${
+                              driveMsg.type === 'ok' ? 'text-emerald-400' : 'text-red-400'
+                            }`}
+                          >
+                            {driveMsg.text}
+                          </p>
+                        )}
+
+                        <div className="grid sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs text-slate-300 mb-1">
+                              Tajuk Folder Nota
+                            </label>
+                            <input
+                              type="text"
+                              value={driveTitleInput}
+                              onChange={(e) => setDriveTitleInput(e.target.value)}
+                              placeholder="cth: Nota Tambahan Google Drive Sub 1"
+                              className="w-full px-3 py-2 text-xs border border-[#263f73] rounded-lg bg-[#0b1733] text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#e5b94c]"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-slate-300 mb-1">
+                              Pautan Folder Google Drive (HTTPS)
+                            </label>
+                            <input
+                              type="url"
+                              value={driveUrlInput}
+                              onChange={(e) => setDriveUrlInput(e.target.value)}
+                              placeholder="https://drive.google.com/drive/folders/..."
+                              className="w-full px-3 py-2 text-xs font-mono border border-[#263f73] rounded-lg bg-[#0b1733] text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#e5b94c]"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-xs text-slate-400">
+                            Pastikan tetapan kongsi folder Google Drive ditetapkan kepada{' '}
+                            <span className="text-slate-200 font-medium">Anyone with the link</span>{' '}
+                            supaya senarai nota dipaparkan terus di dalam portal. Kosongkan untuk memadam pautan.
+                          </p>
+                          <button
+                            type="submit"
+                            disabled={savingDrive}
+                            className="px-3.5 py-2 text-xs font-semibold text-[#041434] bg-[#e5b94c] hover:bg-[#f0cb63] rounded-lg flex items-center gap-1.5 whitespace-nowrap"
+                          >
+                            <Save className="w-3.5 h-3.5" />
+                            <span>{savingDrive ? 'Menyimpan...' : 'Simpan Folder Drive'}</span>
+                          </button>
+                        </div>
+                      </form>
+                    )}
+
+                    {activeTeoriSub.googleDriveUrl ? (
+                      (() => {
+                        const embedDriveUrl = toEmbedGoogleDriveFolderUrl(
+                          activeTeoriSub.googleDriveUrl,
+                          driveViewMode
+                        );
+                        if (!embedDriveUrl) {
+                          return (
+                            <div className="pt-3 border-t border-[#1a2f5c] flex flex-wrap items-center justify-between gap-3">
+                              <p className="text-xs text-slate-300 font-mono truncate max-w-xl">
+                                {activeTeoriSub.googleDriveUrl}
+                              </p>
+                              <a
+                                href={activeTeoriSub.googleDriveUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={() =>
+                                  api.logAccess(token, activeCU.id, 'open_drive', selectedSub).catch(() => {})
+                                }
+                                className="text-xs font-semibold text-[#f0cb63] hover:underline flex items-center gap-1"
+                              >
+                                <span>Buka Pautan</span>
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </a>
+                            </div>
+                          );
+                        }
+                        return (
+                          <div className="space-y-3 pt-2 border-t border-[#1a2f5c]">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <p className="text-xs font-medium text-slate-300">
+                                Senarai Kandungan Folder Google Drive
+                              </p>
+                              <div className="flex items-center gap-1 p-0.5 bg-[#071024] border border-[#1a2f5c] rounded-lg">
+                                <button
+                                  type="button"
+                                  onClick={() => setDriveViewMode('list')}
+                                  className={`px-2.5 py-1 text-xs rounded-md flex items-center gap-1 ${
+                                    driveViewMode === 'list'
+                                      ? 'bg-[#17356e] text-[#f0cb63] font-semibold'
+                                      : 'text-slate-400 hover:text-white'
+                                  }`}
+                                >
+                                  <List className="w-3.5 h-3.5" />
+                                  <span>Senarai</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setDriveViewMode('grid')}
+                                  className={`px-2.5 py-1 text-xs rounded-md flex items-center gap-1 ${
+                                    driveViewMode === 'grid'
+                                      ? 'bg-[#17356e] text-[#f0cb63] font-semibold'
+                                      : 'text-slate-400 hover:text-white'
+                                  }`}
+                                >
+                                  <LayoutGrid className="w-3.5 h-3.5" />
+                                  <span>Grid</span>
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="border border-[#263f73] rounded-lg overflow-hidden bg-white">
+                              <iframe
+                                src={embedDriveUrl}
+                                title={activeTeoriSub.googleDriveTitle || 'Folder Nota Google Drive'}
+                                className="w-full h-[380px]"
+                                referrerPolicy="no-referrer"
+                              />
+                            </div>
+
+                            <p className="text-xs text-slate-400">
+                              Jika senarai fail tidak kelihatan kerana tetapan privasi pelayar atau akaun Google, klik{' '}
+                              <span className="text-slate-200 font-medium">&ldquo;Buka Folder Google Drive&rdquo;</span> di atas.
+                            </p>
+                          </div>
+                        );
+                      })()
+                    ) : (
+                      !canEdit && (
+                        <div className="pt-4 border-t border-[#1a2f5c] text-xs text-slate-400">
+                          Pengajar atau Admin belum memautkan folder Google Drive untuk sub bahagian ini.
+                        </div>
+                      )
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -976,6 +1979,18 @@ export function LearningWorkspace({
                     )}
                   </div>
                 </div>
+              )}
+              {/* SECTION: TUGASAN JPK & PENANDAAN AI */}
+              {selectedSection === 'tugasan' && (
+                <TugasanWorkspace
+                  token={token}
+                  user={user}
+                  level={activeLevel}
+                  cu={activeCU}
+                  papers={tugasanPapers.filter((p) => p.cuId === activeCU.id)}
+                  submissions={tugasanSubmissions.filter((s) => s.cuId === activeCU.id)}
+                  onRefreshWorkspace={onRefreshWorkspace}
+                />
               )}
             </div>
           )}

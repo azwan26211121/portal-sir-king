@@ -173,7 +173,7 @@ export function PortalQrFooter({
   return (
     <>
       {/* Persistent Bottom Website QR Footer on Every Page */}
-      <footer className="bg-[#041029]/95 border-t border-[#1c366b] mt-auto">
+      <footer className="print:hidden bg-[#041029]/95 border-t border-[#1c366b] mt-auto">
         <div className="max-w-7xl mx-auto px-6 py-6 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-400">
             <span className="font-semibold text-slate-200">{branding.portalName}</span>
