@@ -1,21 +1,53 @@
-import React, { useMemo, useState } from 'react';
-import { ArrowRight, Search } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  ArrowRight,
+  CloudUpload,
+  ExternalLink,
+  FileText,
+  FolderOpen,
+  RefreshCw,
+  Search,
+} from 'lucide-react';
+import { api } from '../lib/api.ts';
+import {
+  buildTraineeFolderName,
+  buildTrainingSummaryReportBlob,
+  type DriveFileResult,
+  type HierarchicalDriveFolderResult,
+  getGoogleDriveAccessToken,
+  getGoogleWorkspaceUser,
+  initGoogleWorkspaceAuth,
+  listFilesInDriveFolder,
+  resolveHierarchicalTraineeDriveFolder,
+  signInWithGoogleDrive,
+  signOutGoogleWorkspace,
+  uploadFileToDriveFolder,
+} from '../lib/googleDrive.ts';
+import { GoogleSignInButton } from './GoogleSignInButton.tsx';
 import type {
   AccessLogEntry,
+  BrandingConfig,
   CUModule,
   LearningSection,
+  PublicUser,
+  SopCheckProgress,
   TopicLevel,
   TugasanPaper,
   TugasanSubmission,
 } from '../types.ts';
 
 interface SearchAndTrackingViewProps {
+  token: string;
+  user: PublicUser;
+  branding: BrandingConfig;
   levels: TopicLevel[];
   cus: CUModule[];
+  sopProgress?: SopCheckProgress[];
   accessLogs: AccessLogEntry[];
   tugasanPapers?: TugasanPaper[];
   tugasanSubmissions?: TugasanSubmission[];
   onNavigateToCu: (levelId: string, section: LearningSection, cuId: string) => void;
+  onRefreshWorkspace?: () => Promise<void>;
 }
 
 const ACTION_LABELS: Record<AccessLogEntry['action'], string> = {
@@ -27,18 +59,169 @@ const ACTION_LABELS: Record<AccessLogEntry['action'], string> = {
   complete_sop: 'Lengkap Senarai Semak SOP',
   submit_tugasan: 'Hantar Kertas Tugasan (Penandaan AI)',
   print_tugasan: 'Cetak Kertas Tugasan (Lulus)',
+  sync_drive: 'Simpan Rekod Latihan ke Google Drive',
 };
 
 export function SearchAndTrackingView({
+  token,
+  user,
+  branding,
   levels,
   cus,
+  sopProgress = [],
   accessLogs,
   tugasanPapers = [],
   tugasanSubmissions = [],
   onNavigateToCu,
+  onRefreshWorkspace,
 }: SearchAndTrackingViewProps) {
   const [query, setQuery] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'incomplete' | 'ready'>('all');
+
+  const [driveConnected, setDriveConnected] = useState(() => Boolean(getGoogleDriveAccessToken()));
+  const [googleEmail, setGoogleEmail] = useState<string | null>(
+    () => getGoogleWorkspaceUser()?.email || null
+  );
+  const [driveBusy, setDriveBusy] = useState(false);
+  const [driveNotice, setDriveNotice] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+  const [traineeFolder, setTraineeFolder] = useState<HierarchicalDriveFolderResult | null>(null);
+  const [folderFiles, setFolderFiles] = useState<DriveFileResult[]>([]);
+
+  useEffect(() => {
+    const unsub = initGoogleWorkspaceAuth(
+      (gUser) => {
+        setDriveConnected(true);
+        setGoogleEmail(gUser.email || gUser.displayName || 'Akaun Google');
+      },
+      () => {
+        setDriveConnected(Boolean(getGoogleDriveAccessToken()));
+        if (!getGoogleDriveAccessToken()) setGoogleEmail(null);
+      }
+    );
+    return unsub;
+  }, []);
+
+  const targetFolderLabel = buildTraineeFolderName(user.icNumber, user.userId);
+
+  async function ensureConnectedToken(): Promise<string> {
+    const existing = getGoogleDriveAccessToken();
+    if (existing) return existing;
+    const signed = await signInWithGoogleDrive();
+    setDriveConnected(true);
+    setGoogleEmail(signed.user.email || signed.user.displayName || 'Akaun Google');
+    return signed.accessToken;
+  }
+
+  const supervisorLabel =
+    user.supervisorName || (user.role === 'pengajar' ? user.name : 'PENTADBIR UTAMA');
+
+  async function handleConnectAndLoadFolder() {
+    setDriveBusy(true);
+    setDriveNotice(null);
+    try {
+      const accessToken = await ensureConnectedToken();
+      const folder = await resolveHierarchicalTraineeDriveFolder(
+        accessToken,
+        branding.driveRecordsFolderId,
+        supervisorLabel,
+        user.icNumber,
+        user.userId,
+        user.name
+      );
+      setTraineeFolder(folder);
+      const files = await listFilesInDriveFolder(accessToken, folder.id);
+      setFolderFiles(files);
+      setDriveNotice({
+        type: 'ok',
+        text: folder.created
+          ? `Folder baharu (${folder.pathLabel}) dicipta di Google Drive.`
+          : `Folder sedia ada (${folder.pathLabel}) dipautkan (${files.length} fail ditemui).`,
+      });
+    } catch (err) {
+      setDriveNotice({
+        type: 'err',
+        text: err instanceof Error ? err.message : 'Gagal menyambung ke folder Google Drive.',
+      });
+    } finally {
+      setDriveBusy(false);
+    }
+  }
+
+  async function handleGenerateAndUploadSummary() {
+    setDriveBusy(true);
+    setDriveNotice(null);
+    try {
+      const accessToken = await ensureConnectedToken();
+      const folder = await resolveHierarchicalTraineeDriveFolder(
+        accessToken,
+        branding.driveRecordsFolderId,
+        supervisorLabel,
+        user.icNumber,
+        user.userId,
+        user.name
+      );
+      setTraineeFolder(folder);
+
+      const userSubs = tugasanSubmissions.filter((s) => s.userId === user.id);
+      const userSop = sopProgress.filter((p) => p.userId === user.id);
+      const userLogs = accessLogs.filter((l) => l.userId === user.id);
+
+      const reportBlob = buildTrainingSummaryReportBlob({
+        collegeName: branding.collegeName,
+        collegeAddress: branding.collegeAddress,
+        traineeName: user.name,
+        traineeIc: user.icNumber || '-',
+        traineeCodeId: user.userId,
+        levels,
+        cus,
+        papers: tugasanPapers,
+        submissions: userSubs,
+        sopProgress: userSop,
+        accessLogs: userLogs,
+      });
+
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const fileName = `Rekod-Latihan-${targetFolderLabel}-${stamp}.html`;
+      const uploaded = await uploadFileToDriveFolder(
+        accessToken,
+        folder.id,
+        fileName,
+        'text/html',
+        reportBlob
+      );
+
+      if (cus[0]) {
+        await api.logAccess(token, cus[0].id, 'sync_drive').catch(() => {});
+      }
+      if (onRefreshWorkspace) {
+        await onRefreshWorkspace();
+      }
+      const files = await listFilesInDriveFolder(accessToken, folder.id);
+      setFolderFiles(files);
+      setDriveNotice({
+        type: 'ok',
+        text: `Rekod Latihan Lengkap (${uploaded.name}) berjaya dijana dan disimpan dalam folder (${folder.pathLabel}).`,
+      });
+    } catch (err) {
+      setDriveNotice({
+        type: 'err',
+        text:
+          err instanceof Error
+            ? err.message
+            : 'Gagal menjana atau memuat naik rekod latihan ke Google Drive.',
+      });
+    } finally {
+      setDriveBusy(false);
+    }
+  }
+
+  async function handleDisconnectDrive() {
+    await signOutGoogleWorkspace().catch(() => {});
+    setDriveConnected(false);
+    setGoogleEmail(null);
+    setTraineeFolder(null);
+    setFolderFiles([]);
+  }
 
   const levelMap = useMemo(() => {
     const map = new Map<string, TopicLevel>();
@@ -99,6 +282,137 @@ export function SearchAndTrackingView({
 
   return (
     <div className="space-y-6">
+      {/* Google Drive Arkib Rekod Latihan (Folder Mengikut No. KP) */}
+      <section className="bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-6 space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <FolderOpen className="w-5 h-5 text-[#f0cb63]" />
+              <span>Arkib Rekod Latihan Google Drive (Mengikut No. Kad Pengenalan)</span>
+            </h2>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Setiap rekod latihan (Kertas Tugasan AI, SOP Amali &amp; Laporan Lengkap) disimpan secara automatik ke dalam hierarki{' '}
+              <span className="font-mono font-semibold text-[#f0cb63]">
+                ADMIN / {supervisorLabel} / {targetFolderLabel}
+              </span>
+              {!user.icNumber && ' (No. KP belum diisi — menggunakan ID pengguna sementara)'}.
+            </p>
+            <div className="flex flex-wrap items-center gap-3 text-xs pt-1">
+              <a
+                href={branding.driveRecordsFolderUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-[#f0cb63] hover:underline"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Folder Induk Rekod Drive</span>
+              </a>
+              {traineeFolder && (
+                <a
+                  href={traineeFolder.webViewLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-emerald-400 hover:underline font-semibold"
+                >
+                  <FolderOpen className="w-3.5 h-3.5" />
+                  <span>Buka Folder {traineeFolder.pathLabel}</span>
+                </a>
+              )}
+              {driveConnected && googleEmail && (
+                <span className="text-slate-400">
+                  Disambung: <span className="text-slate-200">{googleEmail}</span>
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            {!driveConnected ? (
+              <GoogleSignInButton
+                onClick={() => void handleConnectAndLoadFolder()}
+                disabled={driveBusy}
+              />
+            ) : (
+              <>
+                <button
+                  type="button"
+                  disabled={driveBusy}
+                  onClick={() => void handleGenerateAndUploadSummary()}
+                  className="px-4 py-2 text-xs font-semibold text-[#041434] bg-[#e5b94c] hover:bg-[#f0cb63] disabled:opacity-60 rounded-lg inline-flex items-center gap-1.5 whitespace-nowrap"
+                >
+                  <CloudUpload className="w-3.5 h-3.5" />
+                  <span>
+                    {driveBusy ? 'Menjana & Menyimpan...' : 'Jana & Simpan Rekod Lengkap ke Drive'}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  disabled={driveBusy}
+                  onClick={() => void handleConnectAndLoadFolder()}
+                  className="px-3 py-2 text-xs font-medium text-slate-200 bg-[#102045] border border-[#263f73] hover:bg-[#172e61] disabled:opacity-60 rounded-lg inline-flex items-center gap-1.5 whitespace-nowrap"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Semak Folder No. KP</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleDisconnectDrive()}
+                  className="px-3 py-2 text-xs text-slate-400 hover:text-white underline"
+                >
+                  Putus Google
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {driveNotice && (
+          <div
+            role="status"
+            className={`p-3 rounded-lg text-xs border ${
+              driveNotice.type === 'ok'
+                ? 'bg-emerald-950/60 border-emerald-700/60 text-emerald-300'
+                : 'bg-red-950/60 border-red-800/70 text-red-300'
+            }`}
+          >
+            {driveNotice.text}
+          </div>
+        )}
+
+        {folderFiles.length > 0 && (
+          <div className="pt-3 border-t border-[#1a2f5c] space-y-2">
+            <p className="text-xs font-semibold text-slate-200">
+              Fail Rekod Tersimpan Dalam Folder {traineeFolder?.name || targetFolderLabel} (
+              {folderFiles.length})
+            </p>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+              {folderFiles.map((f) => (
+                <a
+                  key={f.id}
+                  href={f.webViewLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-3 rounded-lg bg-[#071024] border border-[#1a2f5c] hover:border-[#e5b94c] flex items-center justify-between gap-2 text-xs transition-colors"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <FileText className="w-4 h-4 text-[#f0cb63] shrink-0" />
+                    <div className="min-w-0">
+                      <p className="font-medium text-white truncate">{f.name}</p>
+                      {f.modifiedTime && (
+                        <p className="text-[11px] font-mono text-slate-400">
+                          {new Date(f.modifiedTime).toLocaleString('ms-MY')}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
+
       <section className="bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>

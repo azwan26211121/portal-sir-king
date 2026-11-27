@@ -5,6 +5,7 @@ import {
   CheckSquare,
   ChevronRight,
   ClipboardCheck,
+  CloudUpload,
   Download,
   ExternalLink,
   FileCheck2,
@@ -25,10 +26,30 @@ import {
   X,
 } from 'lucide-react';
 import { api, ApiError } from '../lib/api.ts';
+import {
+  buildDriveNossFolderName,
+  buildSopCompletionReportBlob,
+  buildTraineeFolderName,
+  type CategorizedDriveFile,
+  type CoCuDriveResolvedResult,
+  downloadDriveFileBytes,
+  type DriveFileResult,
+  getGoogleDriveAccessToken,
+  initGoogleWorkspaceAuth,
+  JPK_DRIVE_CATEGORIES,
+  resolveCoCuDriveContents,
+  resolveHierarchicalTraineeDriveFolder,
+  signInWithGoogleDrive,
+  trashDriveFile,
+  uploadFileToDriveFolder,
+} from '../lib/googleDrive.ts';
 import type {
+  BrandingConfig,
   CUModule,
   EbookNoteModule,
+  ExternalDrivePdfSession,
   FileSlotType,
+  JpkDriveFileCategory,
   LearningSection,
   PublicUser,
   SopCategory,
@@ -40,12 +61,24 @@ import type {
   TugasanSubmission,
 } from '../types.ts';
 import { DocumentSlotCard } from './DocumentSlotCard.tsx';
+import { GoogleSignInButton } from './GoogleSignInButton.tsx';
 import { TeoriEbookReader } from './TeoriEbookReader.tsx';
 import { TugasanWorkspace } from './TugasanWorkspace.tsx';
+
+function uint8ArrayToBase64(bytes: Uint8Array): string {
+  const chunkSize = 8192;
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+    binary += String.fromCharCode(...chunk);
+  }
+  return btoa(binary);
+}
 
 interface LearningWorkspaceProps {
   token: string;
   user: PublicUser;
+  branding: BrandingConfig;
   levels: TopicLevel[];
   cus: CUModule[];
   sopProgress: SopCheckProgress[];
@@ -96,6 +129,7 @@ function toEmbedGoogleDriveFolderUrl(rawUrl: string, mode: 'list' | 'grid'): str
 export function LearningWorkspace({
   token,
   user,
+  branding,
   levels,
   cus,
   sopProgress,
@@ -151,11 +185,26 @@ export function LearningWorkspace({
   const [driveMsg, setDriveMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
   const [driveViewMode, setDriveViewMode] = useState<'list' | 'grid'>('list');
 
-  // SOP Editor state
+  // SOP Editor & Google Drive Sync state
   const [editingSop, setEditingSop] = useState(false);
   const [draftSopSteps, setDraftSopSteps] = useState<SopStep[]>([]);
   const [savingSop, setSavingSop] = useState(false);
   const [sopMsg, setSopMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+  const [driveConnected, setDriveConnected] = useState(() => Boolean(getGoogleDriveAccessToken()));
+  const [syncingSopDrive, setSyncingSopDrive] = useState(false);
+  const [sopDriveLink, setSopDriveLink] = useState<{
+    fileUrl: string;
+    folderUrl: string;
+    folderName: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const unsub = initGoogleWorkspaceAuth(
+      () => setDriveConnected(true),
+      () => setDriveConnected(Boolean(getGoogleDriveAccessToken()))
+    );
+    return unsub;
+  }, []);
 
   // Quick Add CU state
   const [showAddCu, setShowAddCu] = useState(false);
@@ -189,14 +238,321 @@ export function LearningWorkspace({
     setFormMsg(null);
     setDriveMsg(null);
     setSopMsg(null);
+    setSopDriveLink(null);
   }, [activeCU?.id, selectedSub, activeTeoriSub, activeAmaliSub]);
+
+  // CoCU Google Drive Repository State (KURSUS -> Kod NOSS -> Folder CU -> Pengkelasan Kod JPK)
+  const driveSubfolderUploadRef = useRef<HTMLInputElement | null>(null);
+  const [selectedDriveCategory, setSelectedDriveCategory] =
+    useState<JpkDriveFileCategory>('kt');
+  const [cocuDriveData, setCocuDriveData] = useState<CoCuDriveResolvedResult | null>(null);
+  const [selectedCuFolderOverrideId, setSelectedCuFolderOverrideId] = useState<string | null>(
+    null
+  );
+  const [cocuDrivePathLabel, setCocuDrivePathLabel] = useState<string>('');
+  const [loadingCocuDrive, setLoadingCocuDrive] = useState(false);
+  const [cocuDriveError, setCocuDriveError] = useState<string | null>(null);
+  const [cocuDriveInfo, setCocuDriveInfo] = useState<string | null>(null);
+  const [uploadingDriveSubfolderFile, setUploadingDriveSubfolderFile] = useState(false);
+  const [openingDrivePdfId, setOpeningDrivePdfId] = useState<string | null>(null);
+  const [confirmTrashDriveFileId, setConfirmTrashDriveFileId] = useState<string | null>(null);
+  const [activeDrivePdfSession, setActiveDrivePdfSession] =
+    useState<ExternalDrivePdfSession | null>(null);
+
+  // Inline PDF preview for KP files from Google Drive
+  const [previewDriveKpFile, setPreviewDriveKpFile] = useState<CategorizedDriveFile | null>(null);
+  const [previewDriveKpBlobUrl, setPreviewDriveKpBlobUrl] = useState<string | null>(null);
+  const [loadingDriveKpPreview, setLoadingDriveKpPreview] = useState(false);
+
+  const visibleDriveCategories = useMemo(
+    () => JPK_DRIVE_CATEGORIES.filter((cat) => canEdit || !cat.staffOnly),
+    [canEdit]
+  );
+
+  useEffect(() => {
+    if (!canEdit && selectedDriveCategory === 'pmt_pma') {
+      setSelectedDriveCategory('kt');
+    }
+  }, [canEdit, selectedDriveCategory]);
+
+  useEffect(() => {
+    return () => {
+      if (previewDriveKpBlobUrl) {
+        URL.revokeObjectURL(previewDriveKpBlobUrl);
+      }
+    };
+  }, [previewDriveKpBlobUrl]);
 
   useEffect(() => {
     setActiveEbookId(null);
     setConfirmDeleteEbookId(null);
     setEbookMsg(null);
     setShowAddEbook(false);
+    setConfirmTrashDriveFileId(null);
+    setSelectedCuFolderOverrideId(null);
+    setCocuDriveError(null);
+    setCocuDriveInfo(null);
+    setPreviewDriveKpFile(null);
+    setPreviewDriveKpBlobUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+    setActiveDrivePdfSession((prev) => (prev && prev.cuId === activeCU?.id ? prev : null));
   }, [activeCU?.id]);
+
+  async function loadCocuDriveSubfolders(options?: {
+    createIfMissing?: boolean;
+    promptSignIn?: boolean;
+    cuFolderIdOverride?: string | null;
+  }) {
+    if (!activeLevel || !activeCU) return;
+    setCocuDriveError(null);
+    if (options?.createIfMissing) setCocuDriveInfo(null);
+    setLoadingCocuDrive(true);
+    try {
+      let accessToken = getGoogleDriveAccessToken();
+      if (!accessToken) {
+        if (!options?.promptSignIn) {
+          setCocuDriveData(null);
+          return;
+        }
+        const signed = await signInWithGoogleDrive();
+        accessToken = signed.accessToken;
+        setDriveConnected(true);
+      }
+
+      const overrideId =
+        options?.cuFolderIdOverride !== undefined
+          ? options.cuFolderIdOverride
+          : selectedCuFolderOverrideId;
+
+      const resolved = await resolveCoCuDriveContents(
+        accessToken,
+        branding.driveRecordsFolderId,
+        activeLevel,
+        activeCU,
+        {
+          createIfMissing: Boolean(options?.createIfMissing),
+          includeStaffOnly: canEdit,
+          cuFolderIdOverride: overrideId || undefined,
+        }
+      );
+
+      setCocuDrivePathLabel(resolved.pathLabel);
+      setCocuDriveData(resolved);
+
+      if (options?.createIfMissing && resolved.cuFolder) {
+        setCocuDriveInfo(
+          `Folder CU "${resolved.pathLabel}" disahkan di Google Drive (${resolved.allFiles.length} fail diimbas).`
+        );
+      }
+    } catch (err) {
+      setCocuDriveError(
+        err instanceof Error
+          ? err.message
+          : 'Gagal memuatkan senarai fail daripada folder CU Google Drive.'
+      );
+    } finally {
+      setLoadingCocuDrive(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!activeLevel || !activeCU || !driveConnected) {
+      setCocuDriveData(null);
+      return;
+    }
+    void loadCocuDriveSubfolders({ createIfMissing: false, promptSignIn: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    activeLevel?.id,
+    activeCU?.id,
+    driveConnected,
+    branding.driveRecordsFolderId,
+    selectedCuFolderOverrideId,
+    canEdit,
+  ]);
+
+  const driveAssessmentFiles = useMemo(() => {
+    if (!cocuDriveData) return [];
+    return [...cocuDriveData.byCategory.kt, ...cocuDriveData.byCategory.penilaian_teori].filter(
+      (f) => f.mimeType === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')
+    );
+  }, [cocuDriveData]);
+
+  async function handleUploadFileToCocuSubfolder(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !activeLevel || !activeCU) return;
+    setUploadingDriveSubfolderFile(true);
+    setCocuDriveError(null);
+    setCocuDriveInfo(null);
+    try {
+      let accessToken = getGoogleDriveAccessToken();
+      if (!accessToken) {
+        const signed = await signInWithGoogleDrive();
+        accessToken = signed.accessToken;
+        setDriveConnected(true);
+      }
+      let targetFolderId = cocuDriveData?.cuFolder?.id || '';
+      if (!targetFolderId) {
+        const resolved = await resolveCoCuDriveContents(
+          accessToken,
+          branding.driveRecordsFolderId,
+          activeLevel,
+          activeCU,
+          { createIfMissing: true, includeStaffOnly: canEdit }
+        );
+        targetFolderId = resolved.cuFolder?.id || '';
+      }
+      if (!targetFolderId) {
+        throw new Error(
+          `Folder CU "${activeCU.code}" gagal disediakan di bawah KURSUS / ${buildDriveNossFolderName(activeLevel)}.`
+        );
+      }
+      const mimeType = file.type || 'application/pdf';
+      const uploaded = await uploadFileToDriveFolder(
+        accessToken,
+        targetFolderId,
+        file.name,
+        mimeType,
+        file
+      );
+      setCocuDriveInfo(
+        `Fail "${uploaded.name}" berjaya dimuat naik terus ke folder CU (${cocuDrivePathLabel || activeCU.code}).`
+      );
+      await loadCocuDriveSubfolders({ createIfMissing: false, promptSignIn: false });
+    } catch (err) {
+      setCocuDriveError(
+        err instanceof Error ? err.message : 'Gagal memuat naik fail ke folder CU Google Drive.'
+      );
+    } finally {
+      setUploadingDriveSubfolderFile(false);
+    }
+  }
+
+  async function handleDownloadCocuDriveFile(file: DriveFileResult) {
+    setCocuDriveError(null);
+    try {
+      let accessToken = getGoogleDriveAccessToken();
+      if (!accessToken) {
+        const signed = await signInWithGoogleDrive();
+        accessToken = signed.accessToken;
+        setDriveConnected(true);
+      }
+      const bytes = await downloadDriveFileBytes(accessToken, file.id);
+      const blob = new Blob([bytes.buffer as ArrayBuffer], {
+        type: file.mimeType || 'application/octet-stream',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    } catch (err) {
+      setCocuDriveError(
+        err instanceof Error ? err.message : 'Gagal memuat turun fail dari Google Drive.'
+      );
+    }
+  }
+
+  async function handlePreviewDriveKpPdf(file: CategorizedDriveFile) {
+    if (previewDriveKpFile?.id === file.id) {
+      setPreviewDriveKpFile(null);
+      setPreviewDriveKpBlobUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
+      return;
+    }
+    setCocuDriveError(null);
+    setLoadingDriveKpPreview(true);
+    try {
+      let accessToken = getGoogleDriveAccessToken();
+      if (!accessToken) {
+        const signed = await signInWithGoogleDrive();
+        accessToken = signed.accessToken;
+        setDriveConnected(true);
+      }
+      const bytes = await downloadDriveFileBytes(accessToken, file.id);
+      const blob = new Blob([bytes.buffer as ArrayBuffer], { type: 'application/pdf' });
+      const blobUrl = URL.createObjectURL(blob);
+      setPreviewDriveKpBlobUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return blobUrl;
+      });
+      setPreviewDriveKpFile(file);
+    } catch (err) {
+      setCocuDriveError(
+        err instanceof Error ? err.message : 'Gagal memaparkan fail PDF nota daripada Google Drive.'
+      );
+    } finally {
+      setLoadingDriveKpPreview(false);
+    }
+  }
+
+  async function handleTrashCocuDriveFile(fileId: string) {
+    setCocuDriveError(null);
+    try {
+      const accessToken = getGoogleDriveAccessToken();
+      if (!accessToken) return;
+      await trashDriveFile(accessToken, fileId);
+      setConfirmTrashDriveFileId(null);
+      setCocuDriveInfo('Fail telah dialihkan ke Trash Google Drive.');
+      await loadCocuDriveSubfolders({ createIfMissing: false, promptSignIn: false });
+    } catch (err) {
+      setCocuDriveError(
+        err instanceof Error ? err.message : 'Gagal memadam fail daripada Google Drive.'
+      );
+    }
+  }
+
+  async function handleLaunchDrivePdfOverlay(
+    file: CategorizedDriveFile,
+    categoryLabelOverride?: string
+  ) {
+    if (!activeCU) return;
+    setCocuDriveError(null);
+    setOpeningDrivePdfId(file.id);
+    try {
+      let accessToken = getGoogleDriveAccessToken();
+      if (!accessToken) {
+        const signed = await signInWithGoogleDrive();
+        accessToken = signed.accessToken;
+        setDriveConnected(true);
+      }
+      const bytes = await downloadDriveFileBytes(accessToken, file.id);
+      const pdfBase64 = uint8ArrayToBase64(bytes);
+      const res = await api.parseDrivePdfPaper(token, {
+        cuId: activeCU.id,
+        driveFileId: file.id,
+        fileName: file.name,
+        pdfBase64,
+      });
+      const catMeta = JPK_DRIVE_CATEGORIES.find((c) => c.key === file.category);
+      setActiveDrivePdfSession({
+        driveFileId: file.id,
+        fileName: file.name,
+        subfolderName: categoryLabelOverride || catMeta?.label || 'Penilaian Teori',
+        category: file.category,
+        cuId: activeCU.id,
+        paper: res.paper,
+        pdfBytes: bytes,
+      });
+      onSelectSection('tugasan');
+    } catch (err) {
+      setCocuDriveError(
+        err instanceof Error
+          ? err.message
+          : 'Gagal membuka fail PDF asal daripada Google Drive untuk penandaan AI.'
+      );
+    } finally {
+      setOpeningDrivePdfId(null);
+    }
+  }
 
   const userSopChecked = useMemo(() => {
     if (!activeCU) return [];
@@ -206,6 +562,75 @@ export function LearningWorkspace({
     return found ? found.checkedStepIds : [];
   }, [sopProgress, user.id, activeCU, selectedSub]);
 
+  async function saveSopRecordToDrive(checkedIdsOverride?: string[]) {
+    if (!activeLevel || !activeCU || !activeAmaliSub) return;
+    setSyncingSopDrive(true);
+    setSopMsg(null);
+    try {
+      let accessToken = getGoogleDriveAccessToken();
+      if (!accessToken) {
+        const signed = await signInWithGoogleDrive();
+        accessToken = signed.accessToken;
+        setDriveConnected(true);
+      }
+
+      const supervisorName =
+        user.supervisorName || (user.role === 'pengajar' ? user.name : 'PENTADBIR UTAMA');
+      const folder = await resolveHierarchicalTraineeDriveFolder(
+        accessToken,
+        branding.driveRecordsFolderId,
+        supervisorName,
+        user.icNumber,
+        user.userId,
+        user.name
+      );
+      const subTitleText =
+        selectedSub === 'sub2' ? activeLevel.amaliSub2Title : activeLevel.amaliSub1Title;
+      const blob = buildSopCompletionReportBlob({
+        collegeName: branding.collegeName,
+        collegeAddress: branding.collegeAddress,
+        traineeName: user.name,
+        traineeIc: user.icNumber || '-',
+        traineeCodeId: user.userId,
+        level: activeLevel,
+        cu: activeCU,
+        subTitle: subTitleText,
+        steps: activeAmaliSub.sopSteps,
+        checkedStepIds: checkedIdsOverride || userSopChecked,
+      });
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const fileName = `SOP-${activeCU.code}-${selectedSub.toUpperCase()}-${buildTraineeFolderName(
+        user.icNumber,
+        user.userId
+      )}-${stamp}.html`;
+      const uploaded = await uploadFileToDriveFolder(
+        accessToken,
+        folder.id,
+        fileName,
+        'text/html',
+        blob
+      );
+      await api.logAccess(token, activeCU.id, 'sync_drive', selectedSub).catch(() => {});
+      await onRefreshWorkspace();
+      setSopDriveLink({
+        fileUrl: uploaded.webViewLink,
+        folderUrl: folder.webViewLink,
+        folderName: folder.pathLabel,
+      });
+      setSopMsg({
+        type: 'ok',
+        text: `Rekod SOP Amali berjaya disimpan ke Google Drive (${folder.pathLabel}).`,
+      });
+    } catch (err) {
+      setSopMsg({
+        type: 'err',
+        text: err instanceof Error ? err.message : 'Gagal menyimpan rekod SOP ke Google Drive.',
+      });
+    } finally {
+      setSyncingSopDrive(false);
+    }
+  }
+
   async function handleToggleSopStep(stepId: string) {
     if (!activeCU || !activeAmaliSub) return;
     const exists = userSopChecked.includes(stepId);
@@ -214,8 +639,13 @@ export function LearningWorkspace({
       : [...userSopChecked, stepId];
     try {
       await api.saveSopCheck(token, activeCU.id, selectedSub, nextIds);
-      if (nextIds.length === activeAmaliSub.sopSteps.length && activeAmaliSub.sopSteps.length > 0) {
+      const allCompleted =
+        nextIds.length === activeAmaliSub.sopSteps.length && activeAmaliSub.sopSteps.length > 0;
+      if (allCompleted) {
         await api.logAccess(token, activeCU.id, 'complete_sop', selectedSub);
+        if (getGoogleDriveAccessToken()) {
+          void saveSopRecordToDrive(nextIds);
+        }
       } else {
         await api.logAccess(token, activeCU.id, 'view_sop', selectedSub);
       }
@@ -1149,9 +1579,494 @@ export function LearningWorkspace({
                 )}
               </div>
 
+              {/* GOOGLE DRIVE KURIKULUM REPOSITORY (KURSUS -> Kod NOSS -> Folder CU) */}
+              <div className="print:hidden bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-5 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-mono text-[#f0cb63] flex items-center gap-1.5">
+                      <HardDrive className="w-3.5 h-3.5" />
+                      <span>
+                        GOOGLE DRIVE KURIKULUM ·{' '}
+                        {cocuDrivePathLabel ||
+                          `KURSUS / ${buildDriveNossFolderName(activeLevel)} / ${activeCU.code}`}
+                      </span>
+                    </p>
+                    <h4 className="mt-1 text-sm font-bold text-white">
+                      Bahan Pembelajaran Folder CU (Pengkelasan Automatik Kod JPK)
+                    </h4>
+                    <p className="mt-0.5 text-xs text-slate-300">
+                      Semua dokumen di dalam folder CU diimbas &amp; diasingkan mengikut kod{' '}
+                      <span className="text-[#f0cb63]">KP</span>,{' '}
+                      <span className="text-[#f0cb63]">KT</span>,{' '}
+                      <span className="text-[#f0cb63]">KK</span> dan{' '}
+                      <span className="text-[#f0cb63]">Penilaian Teori</span>
+                      {canEdit ? (
+                        <>
+                          {' '}
+                          serta <span className="text-[#f0cb63]">PMT / PMA</span> (Pengajar &amp; Admin sahaja)
+                        </>
+                      ) : null}
+                      .
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    {!driveConnected ? (
+                      <GoogleSignInButton
+                        onClick={() =>
+                          void loadCocuDriveSubfolders({
+                            createIfMissing: false,
+                            promptSignIn: true,
+                          })
+                        }
+                        disabled={loadingCocuDrive}
+                      />
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          disabled={loadingCocuDrive}
+                          onClick={() =>
+                            void loadCocuDriveSubfolders({
+                              createIfMissing: false,
+                              promptSignIn: true,
+                            })
+                          }
+                          className="px-3 py-1.5 text-xs font-medium text-slate-200 bg-[#102045] border border-[#263f73] hover:bg-[#172e61] rounded-lg inline-flex items-center gap-1.5"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>{loadingCocuDrive ? 'Memuatkan...' : 'Muat Semula Drive'}</span>
+                        </button>
+                        {canEdit && (
+                          <button
+                            type="button"
+                            disabled={loadingCocuDrive}
+                            onClick={() =>
+                              void loadCocuDriveSubfolders({
+                                createIfMissing: true,
+                                promptSignIn: true,
+                              })
+                            }
+                            className="px-3 py-1.5 text-xs font-semibold text-[#041434] bg-[#e5b94c] hover:bg-[#f0cb63] rounded-lg inline-flex items-center gap-1.5"
+                          >
+                            <FolderOpen className="w-3.5 h-3.5" />
+                            <span>Sahkan Folder CU Drive</span>
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {cocuDriveError && (
+                  <p className="p-2.5 rounded-lg border border-red-800/70 bg-red-950/60 text-xs text-red-300">
+                    {cocuDriveError}
+                  </p>
+                )}
+                {cocuDriveInfo && (
+                  <p className="p-2.5 rounded-lg border border-emerald-700/60 bg-emerald-950/60 text-xs text-emerald-300">
+                    {cocuDriveInfo}
+                  </p>
+                )}
+
+                {driveConnected && (
+                  <>
+                    {cocuDriveData && cocuDriveData.availableCuFolders.length > 1 && (
+                      <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                        <span className="text-slate-400 font-mono mr-1">
+                          Folder CU dalam {cocuDriveData.nossFolder?.name}:
+                        </span>
+                        {cocuDriveData.availableCuFolders.map((cf) => {
+                          const isCurrent = cocuDriveData.cuFolder?.id === cf.id;
+                          return (
+                            <button
+                              key={cf.id}
+                              type="button"
+                              onClick={() => setSelectedCuFolderOverrideId(cf.id)}
+                              className={`px-2 py-1 rounded border font-mono transition-colors ${
+                                isCurrent
+                                  ? 'bg-[#17356e] border-[#e5b94c] text-[#f0cb63] font-semibold'
+                                  : 'bg-[#071024] border-[#1a2f5c] text-slate-300 hover:border-[#2a4a8a]'
+                              }`}
+                            >
+                              {cf.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    <div
+                      className={`grid grid-cols-2 ${
+                        visibleDriveCategories.length >= 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-4'
+                      } gap-1.5 p-1 bg-[#071024] border border-[#1a2f5c] rounded-lg`}
+                    >
+                      {visibleDriveCategories.map((cat) => {
+                        const active = selectedDriveCategory === cat.key;
+                        const count = cocuDriveData?.byCategory[cat.key]?.length ?? 0;
+                        return (
+                          <button
+                            key={cat.key}
+                            type="button"
+                            onClick={() => {
+                              setSelectedDriveCategory(cat.key);
+                              setConfirmTrashDriveFileId(null);
+                            }}
+                            className={`px-2.5 py-2 rounded-md text-xs text-left transition-colors flex items-center justify-between gap-1.5 ${
+                              active
+                                ? 'bg-[#17356e] text-[#f0cb63] font-semibold'
+                                : 'text-slate-300 hover:text-white'
+                            }`}
+                          >
+                            <span className="truncate">{cat.label}</span>
+                            <span className="font-mono text-[11px] opacity-80 shrink-0">
+                              ({count})
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {loadingCocuDrive ? (
+                      <p className="py-4 text-center text-xs text-slate-400">
+                        Mengimbas semua dokumen di dalam folder CU Google Drive...
+                      </p>
+                    ) : !cocuDriveData?.cuFolder ? (
+                      <div className="p-4 rounded-lg bg-[#071024] border border-[#1a2f5c] text-xs text-slate-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <span>
+                          Folder{' '}
+                          <span className="font-mono text-[#f0cb63]">
+                            {cocuDrivePathLabel ||
+                              `KURSUS / ${buildDriveNossFolderName(activeLevel)} / ${activeCU.code}`}
+                          </span>{' '}
+                          belum dijumpai di Google Drive induk.
+                        </span>
+                        {canEdit && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void loadCocuDriveSubfolders({
+                                createIfMissing: true,
+                                promptSignIn: true,
+                              })
+                            }
+                            className="px-3 py-1.5 text-xs font-semibold text-[#041434] bg-[#e5b94c] hover:bg-[#f0cb63] rounded-lg shrink-0"
+                          >
+                            Cipta Folder KURSUS / NOSS / CU Sekarang
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      (() => {
+                        const activeMeta =
+                          visibleDriveCategories.find((c) => c.key === selectedDriveCategory) ||
+                          visibleDriveCategories[0];
+                        const activeFiles = cocuDriveData.byCategory[activeMeta.key] || [];
+                        return (
+                          <div className="space-y-3">
+                            <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                              <div>
+                                <span className="text-slate-400 font-mono">
+                                  Kategori Aktif:{' '}
+                                  <strong className="text-white">{activeMeta.label}</strong>
+                                </span>
+                                <p className="text-[11px] text-slate-400 mt-0.5">
+                                  {activeMeta.description}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {cocuDriveData.cuFolder.webViewLink && (
+                                  <a
+                                    href={cocuDriveData.cuFolder.webViewLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-[#f0cb63] hover:underline"
+                                  >
+                                    <ExternalLink className="w-3.5 h-3.5" />
+                                    <span>Buka Folder CU di Drive</span>
+                                  </a>
+                                )}
+                                {canEdit && (
+                                  <>
+                                    <input
+                                      ref={driveSubfolderUploadRef}
+                                      type="file"
+                                      accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                      onChange={handleUploadFileToCocuSubfolder}
+                                      className="sr-only"
+                                    />
+                                    <button
+                                      type="button"
+                                      disabled={uploadingDriveSubfolderFile}
+                                      onClick={() => driveSubfolderUploadRef.current?.click()}
+                                      className="px-3 py-1.5 text-xs font-semibold text-[#041434] bg-[#e5b94c] hover:bg-[#f0cb63] disabled:opacity-60 rounded-lg inline-flex items-center gap-1.5"
+                                    >
+                                      <Upload className="w-3.5 h-3.5" />
+                                      <span>
+                                        {uploadingDriveSubfolderFile
+                                          ? 'Memuat Naik...'
+                                          : `Muat Naik ke ${cocuDriveData.cuFolder.name}`}
+                                      </span>
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+
+                            {activeFiles.length === 0 ? (
+                              <p className="py-4 text-center text-xs text-slate-400 bg-[#071024] border border-[#1a2f5c] rounded-lg">
+                                Tiada fail bagi kategori {activeMeta.label} dijumpai di dalam folder{' '}
+                                {cocuDriveData.cuFolder.name}.
+                              </p>
+                            ) : (
+                              <div className="divide-y divide-[#1a2f5c] bg-[#071024] border border-[#1a2f5c] rounded-lg">
+                                {activeFiles.map((file) => {
+                                  const isPdf =
+                                    file.mimeType === 'application/pdf' ||
+                                    file.name.toLowerCase().endsWith('.pdf');
+                                  const isAssessmentCategory =
+                                    file.category === 'kt' || file.category === 'penilaian_teori';
+                                  const isKpPdf = isPdf && file.category === 'kp';
+                                  const isOpening = openingDrivePdfId === file.id;
+                                  return (
+                                    <div
+                                      key={file.id}
+                                      className="p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs"
+                                    >
+                                      <div className="min-w-0">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                          <span className="px-1.5 py-0.5 rounded bg-[#102045] border border-[#263f73] text-[#f0cb63] font-mono text-[10px] font-bold shrink-0">
+                                            {activeMeta.codeBadge}
+                                          </span>
+                                          <p className="font-medium text-white truncate">
+                                            {file.name}
+                                          </p>
+                                        </div>
+                                        <p className="text-[11px] font-mono text-slate-400 mt-0.5">
+                                          {isPdf ? 'PDF' : 'Dokumen'}
+                                          {file.subPath ? ` · Subfolder: ${file.subPath}` : ''}
+                                          {file.modifiedTime
+                                            ? ` · Dikemaskini ${new Date(file.modifiedTime).toLocaleDateString('ms-MY')}`
+                                            : ''}
+                                        </p>
+                                      </div>
+                                      <div className="flex flex-wrap items-center gap-2 shrink-0">
+                                        {isPdf && isAssessmentCategory && (
+                                          <button
+                                            type="button"
+                                            disabled={Boolean(openingDrivePdfId)}
+                                            onClick={() =>
+                                              void handleLaunchDrivePdfOverlay(
+                                                file,
+                                                activeMeta.label
+                                              )
+                                            }
+                                            className="px-3 py-1.5 text-xs font-semibold text-[#041434] bg-[#e5b94c] hover:bg-[#f0cb63] disabled:opacity-60 rounded-lg inline-flex items-center gap-1.5"
+                                          >
+                                            <FileCheck2 className="w-3.5 h-3.5" />
+                                            <span>
+                                              {isOpening
+                                                ? 'Menyediakan PDF...'
+                                                : 'Jawab & Semak AI (PDF Asal)'}
+                                            </span>
+                                          </button>
+                                        )}
+                                        {isKpPdf && (
+                                          <button
+                                            type="button"
+                                            disabled={loadingDriveKpPreview}
+                                            onClick={() => {
+                                              onSelectSection('teori');
+                                              void handlePreviewDriveKpPdf(file);
+                                            }}
+                                            className="px-3 py-1.5 text-xs font-semibold text-[#041434] bg-[#e5b94c] hover:bg-[#f0cb63] disabled:opacity-60 rounded-lg inline-flex items-center gap-1.5"
+                                          >
+                                            <BookOpen className="w-3.5 h-3.5" />
+                                            <span>
+                                              {loadingDriveKpPreview &&
+                                              previewDriveKpFile?.id === file.id
+                                                ? 'Membuka...'
+                                                : 'Baca Nota (Teori)'}
+                                            </span>
+                                          </button>
+                                        )}
+                                        <button
+                                          type="button"
+                                          onClick={() => void handleDownloadCocuDriveFile(file)}
+                                          className="px-2.5 py-1.5 text-xs font-medium text-slate-200 bg-[#102045] border border-[#263f73] hover:bg-[#172e61] rounded-lg inline-flex items-center gap-1"
+                                        >
+                                          <Download className="w-3.5 h-3.5" />
+                                          <span>Muat Turun</span>
+                                        </button>
+                                        <a
+                                          href={file.webViewLink}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="px-2.5 py-1.5 text-xs font-medium text-sky-300 bg-[#102045] border border-[#263f73] hover:bg-[#172e61] rounded-lg inline-flex items-center gap-1"
+                                        >
+                                          <ExternalLink className="w-3.5 h-3.5" />
+                                          <span>Lihat</span>
+                                        </a>
+                                        {canEdit &&
+                                          (confirmTrashDriveFileId === file.id ? (
+                                            <div className="inline-flex items-center gap-1">
+                                              <button
+                                                type="button"
+                                                onClick={() =>
+                                                  void handleTrashCocuDriveFile(file.id)
+                                                }
+                                                className="px-2.5 py-1.5 text-xs font-semibold text-white bg-red-700 hover:bg-red-600 rounded-lg"
+                                              >
+                                                Sahkan Padam
+                                              </button>
+                                              <button
+                                                type="button"
+                                                onClick={() => setConfirmTrashDriveFileId(null)}
+                                                className="px-2 py-1 text-xs text-slate-400 hover:text-white"
+                                              >
+                                                Batal
+                                              </button>
+                                            </div>
+                                          ) : (
+                                            <button
+                                              type="button"
+                                              onClick={() => setConfirmTrashDriveFileId(file.id)}
+                                              className="p-1.5 text-red-400 hover:bg-red-950/60 rounded-lg"
+                                              aria-label={`Padam ${file.name}`}
+                                            >
+                                              <Trash2 className="w-3.5 h-3.5" />
+                                            </button>
+                                          ))}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()
+                    )}
+                  </>
+                )}
+              </div>
+
               {/* SECTION: TEORI (Sub 1 / Sub 2) */}
               {selectedSection === 'teori' && (
                 <div className="space-y-5">
+                  {/* Nota / Kertas Penerangan (KP) langsung daripada Google Drive CU */}
+                  {driveConnected && cocuDriveData && (
+                    <div className="bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-6 space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-mono text-slate-400 flex items-center gap-1.5">
+                            <HardDrive className="w-3.5 h-3.5 text-[#f0cb63]" />
+                            <span>
+                              {cocuDriveData.pathLabel} · Kertas Penerangan (KP)
+                            </span>
+                          </p>
+                          <h3 className="mt-1 text-base font-semibold text-white">
+                            Nota / Kertas Penerangan (KP) Google Drive ({cocuDriveData.byCategory.kp.length} Fail)
+                          </h3>
+                          <p className="mt-0.5 text-xs text-slate-300">
+                            Fail berawalan kod <span className="font-mono text-[#f0cb63]">KP...</span> diimbas terus daripada folder CU untuk rujukan teori pelatih.
+                          </p>
+                        </div>
+                      </div>
+
+                      {cocuDriveData.byCategory.kp.length === 0 ? (
+                        <p className="text-xs text-slate-400 bg-[#071024] border border-[#1a2f5c] rounded-lg p-3">
+                          Tiada fail Kertas Penerangan (KP...) ditemui di dalam folder {cocuDriveData.cuFolder?.name || activeCU.code}.
+                        </p>
+                      ) : (
+                        <div className="divide-y divide-[#1a2f5c] bg-[#071024] border border-[#1a2f5c] rounded-lg">
+                          {cocuDriveData.byCategory.kp.map((kpFile) => {
+                            const isPdf =
+                              kpFile.mimeType === 'application/pdf' ||
+                              kpFile.name.toLowerCase().endsWith('.pdf');
+                            const isPreviewOpen = previewDriveKpFile?.id === kpFile.id;
+                            return (
+                              <div key={kpFile.id} className="p-3.5 space-y-3">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+                                  <div className="min-w-0 flex items-center gap-2.5">
+                                    <span className="px-2 py-1 rounded bg-[#102045] border border-[#263f73] text-[#f0cb63] font-mono font-bold shrink-0">
+                                      KP
+                                    </span>
+                                    <div className="min-w-0">
+                                      <p className="font-semibold text-white truncate">
+                                        {kpFile.name}
+                                      </p>
+                                      {kpFile.subPath && (
+                                        <p className="text-[11px] font-mono text-slate-400">
+                                          Subfolder: {kpFile.subPath}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                                    {isPdf && (
+                                      <button
+                                        type="button"
+                                        disabled={loadingDriveKpPreview}
+                                        onClick={() => void handlePreviewDriveKpPdf(kpFile)}
+                                        className={
+                                          isPreviewOpen
+                                            ? 'px-3 py-1.5 text-xs font-semibold text-white bg-[#17356e] border border-[#e5b94c] rounded-lg inline-flex items-center gap-1.5'
+                                            : 'px-3 py-1.5 text-xs font-semibold text-[#041434] bg-[#e5b94c] hover:bg-[#f0cb63] rounded-lg inline-flex items-center gap-1.5'
+                                        }
+                                      >
+                                        {isPreviewOpen ? (
+                                          <>
+                                            <X className="w-3.5 h-3.5" />
+                                            <span>Tutup PDF</span>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <BookOpen className="w-3.5 h-3.5" />
+                                            <span>
+                                              {loadingDriveKpPreview ? 'Memuatkan...' : 'Baca PDF'}
+                                            </span>
+                                          </>
+                                        )}
+                                      </button>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => void handleDownloadCocuDriveFile(kpFile)}
+                                      className="px-2.5 py-1.5 text-xs font-medium text-slate-200 bg-[#102045] border border-[#263f73] hover:bg-[#172e61] rounded-lg inline-flex items-center gap-1"
+                                    >
+                                      <Download className="w-3.5 h-3.5" />
+                                      <span>Muat Turun</span>
+                                    </button>
+                                    <a
+                                      href={kpFile.webViewLink}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="px-2.5 py-1.5 text-xs font-medium text-sky-300 bg-[#102045] border border-[#263f73] hover:bg-[#172e61] rounded-lg inline-flex items-center gap-1"
+                                    >
+                                      <ExternalLink className="w-3.5 h-3.5" />
+                                      <span>Lihat di Drive</span>
+                                    </a>
+                                  </div>
+                                </div>
+
+                                {isPreviewOpen && previewDriveKpBlobUrl && (
+                                  <div className="pt-2 border-t border-[#1a2f5c]">
+                                    <iframe
+                                      title={`Paparan PDF ${kpFile.name}`}
+                                      src={previewDriveKpBlobUrl}
+                                      className="w-full h-[640px] rounded-lg border border-[#263f73] bg-white"
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Koleksi E-Book Kertas Penerangan (Multi-Modul) */}
                   {((activeCU.ebookModules && activeCU.ebookModules.length > 0) || canEdit) && (
                     <div className="bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-6 space-y-5">
@@ -1763,10 +2678,30 @@ export function LearningWorkspace({
                         </h4>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex flex-wrap items-center gap-2 shrink-0">
                         <span className="text-xs font-mono tabular-nums text-slate-300">
                           {userSopChecked.length}/{activeAmaliSub.sopSteps.length} Disemak
                         </span>
+                        {!editingSop &&
+                          activeAmaliSub.sopSteps.length > 0 &&
+                          (driveConnected ? (
+                            <button
+                              type="button"
+                              disabled={syncingSopDrive}
+                              onClick={() => void saveSopRecordToDrive()}
+                              className="px-3 py-1.5 text-xs font-semibold text-white bg-sky-700 hover:bg-sky-600 disabled:opacity-60 rounded-lg inline-flex items-center gap-1.5 whitespace-nowrap"
+                            >
+                              <CloudUpload className="w-3.5 h-3.5" />
+                              <span>
+                                {syncingSopDrive ? 'Menyimpan...' : 'Simpan Rekod SOP ke Drive'}
+                              </span>
+                            </button>
+                          ) : (
+                            <GoogleSignInButton
+                              onClick={() => void saveSopRecordToDrive()}
+                              disabled={syncingSopDrive}
+                            />
+                          ))}
                         {userSopChecked.length > 0 && !editingSop && (
                           <button
                             type="button"
@@ -1791,6 +2726,35 @@ export function LearningWorkspace({
                         )}
                       </div>
                     </div>
+
+                    {sopDriveLink && (
+                      <div className="mt-4 p-3 rounded-lg bg-[#071024] border border-sky-800/60 flex flex-wrap items-center justify-between gap-2 text-xs">
+                        <span className="text-slate-300">
+                          Rekod SOP disimpan dalam folder Drive{' '}
+                          <span className="font-mono text-white">{sopDriveLink.folderName}</span>
+                        </span>
+                        <div className="flex items-center gap-3">
+                          <a
+                            href={sopDriveLink.fileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-emerald-400 hover:underline inline-flex items-center gap-1 font-semibold"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            <span>Buka Rekod SOP</span>
+                          </a>
+                          <a
+                            href={sopDriveLink.folderUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#f0cb63] hover:underline inline-flex items-center gap-1"
+                          >
+                            <FolderOpen className="w-3.5 h-3.5" />
+                            <span>Folder No. KP</span>
+                          </a>
+                        </div>
+                      </div>
+                    )}
 
                     {sopMsg && (
                       <div
@@ -1985,11 +2949,18 @@ export function LearningWorkspace({
                 <TugasanWorkspace
                   token={token}
                   user={user}
+                  branding={branding}
                   level={activeLevel}
                   cu={activeCU}
                   papers={tugasanPapers.filter((p) => p.cuId === activeCU.id)}
                   submissions={tugasanSubmissions.filter((s) => s.cuId === activeCU.id)}
                   onRefreshWorkspace={onRefreshWorkspace}
+                  externalDrivePdf={activeDrivePdfSession}
+                  onClearExternalDrivePdf={() => setActiveDrivePdfSession(null)}
+                  driveAssessmentFiles={driveAssessmentFiles}
+                  driveCuPathLabel={cocuDrivePathLabel}
+                  openingDrivePdfId={openingDrivePdfId}
+                  onOpenDrivePdf={(file) => handleLaunchDrivePdfOverlay(file)}
                 />
               )}
             </div>

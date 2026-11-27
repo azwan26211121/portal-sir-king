@@ -42,6 +42,8 @@ export function AuthGate({ branding, onAuthenticated }: AuthGateProps) {
   // Register fields
   const [regUserId, setRegUserId] = useState('');
   const [regName, setRegName] = useState('');
+  const [regIcNumber, setRegIcNumber] = useState('');
+  const [regEmail, setRegEmail] = useState('');
   const [regPin, setRegPin] = useState('');
   const [regSupervisorId, setRegSupervisorId] = useState('');
   const [regLevelId, setRegLevelId] = useState('');
@@ -169,12 +171,19 @@ export function AuthGate({ branding, onAuthenticated }: AuthGateProps) {
       setErrorMsg('PIN akses mestilah tepat 6 digit nombor.');
       return;
     }
+    const cleanEmail = regEmail.trim().toLowerCase();
+    if (cleanEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      setErrorMsg('Format emel Google tidak sah. Contoh: nama@gmail.com');
+      return;
+    }
     setLoading(true);
     try {
       const res = await api.registerUser({
         role: regRole,
         userId: regUserId.trim(),
         name: regName,
+        icNumber: regIcNumber.trim(),
+        email: cleanEmail || undefined,
         pin: regPin,
         supervisorId: regRole === 'pelatih' ? regSupervisorId : undefined,
         requestedLevelId: regRole === 'pelatih' ? regLevelId : undefined,
@@ -508,6 +517,41 @@ export function AuthGate({ branding, onAuthenticated }: AuthGateProps) {
                       value={regName}
                       onChange={(e) => setRegName(e.target.value)}
                       placeholder="Masukkan nama penuh rasmi"
+                      className="w-full px-3.5 py-2.5 text-sm bg-[#071024] text-slate-100 placeholder:text-slate-500 border border-[#263f73] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e5b94c]"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="reg-ic" className="block text-sm font-medium text-slate-200 mb-1.5">
+                      No. Kad Pengenalan (MyKad)
+                    </label>
+                    <input
+                      id="reg-ic"
+                      name="register_ic_number"
+                      type="text"
+                      required={regRole === 'pelatih'}
+                      maxLength={20}
+                      autoComplete="off"
+                      value={regIcNumber}
+                      onChange={(e) => setRegIcNumber(e.target.value.replace(/[^0-9-]/g, '').slice(0, 20))}
+                      placeholder="cth: 020514-10-1234"
+                      className="w-full px-3.5 py-2.5 text-sm font-mono tabular-nums bg-[#071024] text-slate-100 placeholder:text-slate-500 border border-[#263f73] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e5b94c]"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="reg-email" className="block text-sm font-medium text-slate-200 mb-1.5">
+                      Emel Google (Untuk Kebenaran Akses Rekod Drive)
+                    </label>
+                    <input
+                      id="reg-email"
+                      name="register_google_email"
+                      type="email"
+                      maxLength={120}
+                      autoComplete="off"
+                      value={regEmail}
+                      onChange={(e) => setRegEmail(e.target.value)}
+                      placeholder="cth: nama@gmail.com (pilihan / disyorkan)"
                       className="w-full px-3.5 py-2.5 text-sm bg-[#071024] text-slate-100 placeholder:text-slate-500 border border-[#263f73] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e5b94c]"
                     />
                   </div>

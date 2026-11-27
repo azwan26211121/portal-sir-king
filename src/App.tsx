@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { LogOut } from 'lucide-react';
 import { AdminPanelView } from './components/AdminPanelView.tsx';
 import { AuthGate } from './components/AuthGate.tsx';
@@ -8,6 +8,11 @@ import { PortalQrFooter } from './components/PortalQrFooter.tsx';
 import { SearchAndTrackingView } from './components/SearchAndTrackingView.tsx';
 import { TraineeManagementView } from './components/TraineeManagementView.tsx';
 import { api, ApiError } from './lib/api.ts';
+import {
+  getGoogleDriveAccessToken,
+  initGoogleWorkspaceAuth,
+  performTwoWayDriveSync,
+} from './lib/googleDrive.ts';
 import type {
   AccessLogEntry,
   BrandingConfig,
@@ -52,6 +57,11 @@ const DEFAULT_BRANDING: BrandingConfig = {
     'Pendaftaran akaun anda telah direkodkan. Kandungan nota, latihan Google Form, dan SOP bengkel akan dibuka sebaik sahaja pengajar penyelia meluluskan akaun anda.',
   logoUrl: '/assets/aistudio/logo_sir_king_portal_93f80572.jpeg',
   bannerUrl: '/assets/sirking_banner_full.jpeg',
+  collegeName: 'KOLEJ KEMAHIRAN / PUSAT BERTAULIAH (SIRKING)',
+  collegeAddress: 'TINGKAT 1, BLOK AKADEMIK,\nPUSAT LATIHAN KEMAHIRAN ELEKTRIK',
+  driveRecordsFolderId: '168i3Rpp8PGlGGa-4yNPTtJVCBgiDUc36',
+  driveRecordsFolderUrl:
+    'https://drive.google.com/drive/folders/168i3Rpp8PGlGGa-4yNPTtJVCBgiDUc36?usp=sharing',
   hasCustomLogo: false,
   hasCustomBanner: false,
   paymentQrUrl: null,
@@ -87,6 +97,16 @@ export default function App() {
   const [selectedLevelId, setSelectedLevelId] = useState<string | null>(null);
   const [selectedSection, setSelectedSection] = useState<LearningSection>('teori');
   const [selectedCuId, setSelectedCuId] = useState<string | null>(null);
+  const [driveConnected, setDriveConnected] = useState(() => Boolean(getGoogleDriveAccessToken()));
+  const lastAutoSyncKeyRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const unsub = initGoogleWorkspaceAuth(
+      () => setDriveConnected(true),
+      () => setDriveConnected(Boolean(getGoogleDriveAccessToken()))
+    );
+    return unsub;
+  }, []);
 
   useEffect(() => {
     api
@@ -145,7 +165,34 @@ export default function App() {
     }
   }, [token, user, fetchWorkspace]);
 
+  // Automatic Real-Time Two-Way Sync with Google Drive (_SYSTEM_ACCESS_REGISTRY.json) on Login/Drive Connect
+  useEffect(() => {
+    if (!token || !user || user.status !== 'approved' || !driveConnected) return;
+    if (user.role !== 'pengajar' && user.role !== 'admin' && user.role !== 'master_admin') return;
+    const accessToken = getGoogleDriveAccessToken();
+    if (!accessToken) return;
+
+    const syncKey = `${user.id}:${branding.driveRecordsFolderId}:${token.slice(-8)}`;
+    if (lastAutoSyncKeyRef.current === syncKey) return;
+    lastAutoSyncKeyRef.current = syncKey;
+
+    void performTwoWayDriveSync(accessToken, branding.driveRecordsFolderId, {
+      onReconcile: (remote) => api.reconcileDriveSystemRegistry(token, remote),
+      onFetchLatest: () => api.getDriveSystemRegistry(token),
+      syncPermissions: true,
+    })
+      .then((res) => {
+        if (res.reconciledCount > 0) {
+          void fetchWorkspace(token);
+        }
+      })
+      .catch(() => {
+        // Silent fallback so login is never blocked by transient Drive errors
+      });
+  }, [token, user, driveConnected, branding.driveRecordsFolderId, fetchWorkspace]);
+
   function handleAuthenticated(newToken: string, newUser: PublicUser) {
+    lastAutoSyncKeyRef.current = null;
     setToken(newToken);
     setUser(newUser);
     setNavTab('workspace');
@@ -361,6 +408,7 @@ export default function App() {
               <LearningWorkspace
                 token={token}
                 user={user}
+                branding={branding}
                 levels={levels}
                 cus={cus}
                 sopProgress={sopProgress}
@@ -378,12 +426,17 @@ export default function App() {
 
             {navTab === 'search' && (
               <SearchAndTrackingView
+                token={token}
+                user={user}
+                branding={branding}
                 levels={levels}
                 cus={cus}
+                sopProgress={sopProgress}
                 accessLogs={accessLogs}
                 tugasanPapers={tugasanPapers}
                 tugasanSubmissions={tugasanSubmissions}
                 onNavigateToCu={handleJumpToCu}
+                onRefreshWorkspace={() => fetchWorkspace(token)}
               />
             )}
 
@@ -392,6 +445,7 @@ export default function App() {
                 <TraineeManagementView
                   token={token}
                   currentUser={user}
+                  branding={branding}
                   levels={levels}
                   onUserUpdated={handleRefreshUser}
                 />
@@ -404,6 +458,10 @@ export default function App() {
                 branding={branding}
                 levels={levels}
                 cus={cus}
+                sopProgress={sopProgress}
+                accessLogs={accessLogs}
+                tugasanPapers={tugasanPapers}
+                tugasanSubmissions={tugasanSubmissions}
                 onBrandingUpdated={setBranding}
                 onRefreshWorkspace={() => fetchWorkspace(token)}
                 onJumpToCu={handleJumpToCu}

@@ -1,5 +1,22 @@
 export type UserRole = 'pelatih' | 'pengajar' | 'admin' | 'master_admin';
 
+export type AccessTierRole = 'MASTER_ADMIN' | 'ADMIN' | 'PENGAJAR' | 'PELATIH';
+
+export type JpkDriveFileCategory =
+  | 'kp'
+  | 'kt'
+  | 'kk'
+  | 'penilaian_teori'
+  | 'pmt_pma';
+
+export interface JpkDriveCategoryMeta {
+  key: JpkDriveFileCategory;
+  codeBadge: string;
+  label: string;
+  description: string;
+  staffOnly?: boolean;
+}
+
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
 
 export type LearningSection = 'teori' | 'amali_sop' | 'latihan' | 'tugasan';
@@ -85,6 +102,63 @@ export interface CUModule {
   amaliSub2: AmaliSubContent;
 }
 
+export type TugasanQuestionType =
+  | 'text'
+  | 'mcq'
+  | 'true_false'
+  | 'matching'
+  | 'diagram_label'
+  | 'symbol_draw';
+
+export interface PdfPoint {
+  page: number; // 1-indexed page number in source PDF
+  x: number; // PDF coordinate (origin bottom-left, points)
+  y: number; // PDF coordinate (origin bottom-left, points)
+}
+
+export interface PdfBox {
+  page: number;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface PdfQuestionOverlaySpec {
+  markPos: PdfPoint;
+  mcqChoices?: Record<string, PdfPoint>;
+  textLines?: {
+    page: number;
+    x: number;
+    y: number;
+    width: number;
+    lineHeight?: number;
+    maxLines?: number;
+  }[];
+  trueFalseRows?: {
+    key: string;
+    page: number;
+    boxX: number;
+    boxY: number;
+  }[];
+  matchingLeftPoints?: { rowIdx: number; page: number; x: number; y: number }[];
+  matchingRightPoints?: { rowIdx: number; page: number; x: number; y: number }[];
+  symbolCells?: { rowIdx: number; page: number; x: number; y: number; w: number; h: number }[];
+  answerSlots?: { key: string; page: number; x: number; y: number; maxWidth: number }[];
+}
+
+export interface PdfPaperOverlayMeta {
+  namePos: PdfPoint;
+  icPos: PdfPoint;
+  datePos: PdfPoint;
+  userIdPos?: PdfPoint;
+  totalMarkPos: PdfPoint;
+  statusPos?: PdfPoint;
+  stampBox: PdfBox;
+  headerLogoBox?: PdfBox;
+  headerAddrBox?: PdfBox;
+}
+
 export interface TugasanQuestion {
   id: string;
   numberLabel: string;
@@ -92,6 +166,38 @@ export interface TugasanQuestion {
   subPrompts?: string[];
   maxMarks: number;
   rubricHint: string;
+  questionType?: TugasanQuestionType;
+  mcqStatements?: string[];
+  mcqOptions?: {
+    key: string;
+    label: string;
+    imageUrl?: string;
+    symbolId?: string;
+  }[];
+  diagramImageUrl?: string;
+  diagramCaption?: string;
+  diagramCallouts?: {
+    key: string;
+    topPercent: number;
+    leftPercent: number;
+    widthPercent?: number;
+    heightPercent?: number;
+    opaqueMask?: boolean;
+  }[];
+  trueFalseItems?: { key: string; text: string }[];
+  matchingLeftHeader?: string;
+  matchingRightHeader?: string;
+  matchingRows?: {
+    leftText: string;
+    rightText?: string;
+    rightImageUrl?: string;
+  }[];
+  symbolRows?: {
+    bil: string;
+    label: string;
+    imageUrl: string;
+  }[];
+  pdfOverlay?: PdfQuestionOverlaySpec;
 }
 
 export interface TugasanPaper {
@@ -110,6 +216,12 @@ export interface TugasanPaper {
   questions: TugasanQuestion[];
   references: string[];
   sourceEbookId?: string;
+  sourcePdfUrl?: string;
+  sourcePdfStoredName?: string;
+  sourcePdfFileName?: string;
+  sourceDriveFileId?: string;
+  sourceDriveFileName?: string;
+  pdfOverlayMeta?: PdfPaperOverlayMeta;
   updatedAt: string;
 }
 
@@ -119,6 +231,7 @@ export interface TugasanAnswerGrade {
   marksAwarded: number;
   maxMarks: number;
   status: 'betul' | 'separa' | 'salah';
+  itemStatuses?: ('betul' | 'salah')[];
   aiFeedback: string;
   skemaJawapan: string;
 }
@@ -130,6 +243,7 @@ export interface TugasanSubmission {
   userId: string;
   userName: string;
   userCodeId: string;
+  userIcNumber?: string;
   submittedAt: string;
   answers: Record<string, string>;
   grades: TugasanAnswerGrade[];
@@ -139,12 +253,78 @@ export interface TugasanSubmission {
   passed: boolean;
   overallFeedback: string;
   gradedByModel: string;
+  sourceDriveFileId?: string;
+  sourceDriveFileName?: string;
+  driveFolderId?: string;
+  driveFolderName?: string;
+  driveFolderUrl?: string;
+  driveFileId?: string;
+  driveFileUrl?: string;
+  driveSyncedAt?: string;
+}
+
+export interface ExternalDrivePdfSession {
+  cuId: string;
+  driveFileId: string;
+  fileName: string;
+  subfolderName: string;
+  category?: JpkDriveFileCategory;
+  pdfBytes: Uint8Array;
+  paper: TugasanPaper;
+}
+
+export interface UserChangeLogEntry {
+  id: string;
+  timestamp: string;
+  actorId: string;
+  actorName: string;
+  actorRole: UserRole;
+  action: string;
+  targetUserId?: string;
+  targetName?: string;
+  details: string;
+}
+
+export interface DriveRegistryUserRecord {
+  id: string;
+  userId: string;
+  name: string;
+  icNumber: string;
+  email: string;
+  role: UserRole;
+  accessTier: AccessTierRole;
+  status: ApprovalStatus;
+  supervisorId: string | null;
+  supervisorName: string;
+  requestedLevelId: string | null;
+  requestedLevelLabel: string;
+  approvedLevelId: string | null;
+  approvedLevelLabel: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DriveSystemRegistryPayload {
+  version: number;
+  updatedAt: string;
+  collegeName: string;
+  driveRecordsFolderId: string;
+  roles: AccessTierRole[];
+  summary: {
+    totalUsers: number;
+    approved: number;
+    pending: number;
+    rejected: number;
+  };
+  users: DriveRegistryUserRecord[];
+  changeLogs: UserChangeLogEntry[];
 }
 
 export interface PublicUser {
   id: string;
   userId: string;
   name: string;
+  icNumber?: string;
   email?: string;
   role: UserRole;
   status: ApprovalStatus;
@@ -187,7 +367,8 @@ export interface AccessLogEntry {
     | 'view_sop'
     | 'complete_sop'
     | 'submit_tugasan'
-    | 'print_tugasan';
+    | 'print_tugasan'
+    | 'sync_drive';
   timestamp: string;
 }
 
@@ -213,6 +394,10 @@ export interface BrandingConfig {
   pendingMessage: string;
   logoUrl: string;
   bannerUrl: string;
+  collegeName: string;
+  collegeAddress: string;
+  driveRecordsFolderId: string;
+  driveRecordsFolderUrl: string;
   hasCustomLogo: boolean;
   hasCustomBanner: boolean;
   paymentQrUrl: string | null;

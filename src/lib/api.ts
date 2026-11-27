@@ -4,6 +4,7 @@ import type {
   AuthStatusResponse,
   BrandingConfig,
   CUModule,
+  DriveSystemRegistryPayload,
   FileSlotType,
   PublicUser,
   SopCheckProgress,
@@ -91,6 +92,9 @@ export const api = {
       whatsappQrTitle: string;
       whatsappQrNote: string;
       whatsappUrl: string;
+      collegeName: string;
+      collegeAddress: string;
+      driveRecordsFolderUrl?: string;
     }>
   ): Promise<{ branding: BrandingConfig }> {
     return requestJson(
@@ -164,6 +168,8 @@ export const api = {
     role: 'pelatih' | 'pengajar';
     userId: string;
     name: string;
+    icNumber?: string;
+    email?: string;
     pin: string;
     supervisorId?: string;
     requestedLevelId?: string;
@@ -476,6 +482,27 @@ export const api = {
     );
   },
 
+  markTugasanDriveSynced(
+    token: string,
+    submissionId: string,
+    payload: {
+      driveFolderId: string;
+      driveFolderName: string;
+      driveFolderUrl: string;
+      driveFileId: string;
+      driveFileUrl: string;
+    }
+  ): Promise<{ submission: TugasanSubmission }> {
+    return requestJson(
+      `/api/tugasan/submissions/${encodeURIComponent(submissionId)}/drive-sync`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      },
+      token
+    );
+  },
+
   createTugasanPaper(
     token: string,
     cuId: string,
@@ -532,6 +559,110 @@ export const api = {
     );
   },
 
+  async fetchTugasanSourcePdf(token: string, paperId: string): Promise<Uint8Array> {
+    const res = await fetch(`/api/tugasan/${encodeURIComponent(paperId)}/source-pdf`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      let msg = 'Gagal memuat turun fail PDF asal Kertas Tugasan.';
+      try {
+        const j = (await res.json()) as { error?: string };
+        if (j.error) msg = j.error;
+      } catch {
+        // ignore
+      }
+      throw new ApiError(msg, res.status);
+    }
+    const buf = await res.arrayBuffer();
+    return new Uint8Array(buf);
+  },
+
+  uploadTugasanSourcePdf(
+    token: string,
+    paperId: string,
+    file: File
+  ): Promise<{ paper: TugasanPaper }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return requestJson(
+      `/api/tugasan/${encodeURIComponent(paperId)}/source-pdf`,
+      { method: 'POST', body: formData },
+      token
+    );
+  },
+
+  deleteTugasanSourcePdf(token: string, paperId: string): Promise<{ paper: TugasanPaper }> {
+    return requestJson(
+      `/api/tugasan/${encodeURIComponent(paperId)}/source-pdf`,
+      { method: 'DELETE' },
+      token
+    );
+  },
+
+  getDriveAccessRegistry(
+    token: string
+  ): Promise<{ users: PublicUser[]; levels: TopicLevel[] }> {
+    return requestJson('/api/drive/access-registry', {}, token);
+  },
+
+  getDriveSystemRegistry(
+    token: string
+  ): Promise<{
+    registry: DriveSystemRegistryPayload;
+    levels: TopicLevel[];
+    cus: CUModule[];
+  }> {
+    return requestJson('/api/drive/system-registry', {}, token);
+  },
+
+  reconcileDriveSystemRegistry(
+    token: string,
+    payload: DriveSystemRegistryPayload
+  ): Promise<{
+    ok: boolean;
+    stats: { updatedUsers: number; addedLogs: number; conflictsSkipped: number };
+    registry: DriveSystemRegistryPayload;
+  }> {
+    return requestJson(
+      '/api/drive/system-registry/reconcile',
+      { method: 'POST', body: JSON.stringify(payload) },
+      token
+    );
+  },
+
+  parseDrivePdfPaper(
+    token: string,
+    payload: {
+      cuId: string;
+      driveFileId: string;
+      fileName: string;
+      pdfBase64: string;
+    }
+  ): Promise<{ paper: TugasanPaper; matchedPaperId?: string }> {
+    return requestJson(
+      '/api/tugasan/drive-pdf/parse',
+      { method: 'POST', body: JSON.stringify(payload) },
+      token
+    );
+  },
+
+  gradeDrivePdfPaper(
+    token: string,
+    payload: {
+      cuId: string;
+      driveFileId: string;
+      fileName: string;
+      paper: TugasanPaper;
+      answers: Record<string, string>;
+    }
+  ): Promise<{ submission: TugasanSubmission }> {
+    return requestJson(
+      '/api/tugasan/drive-pdf/grade',
+      { method: 'POST', body: JSON.stringify(payload) },
+      token
+    );
+  },
+
   getUsers(token: string): Promise<{ users: PublicUser[] }> {
     return requestJson('/api/users', {}, token);
   },
@@ -552,11 +683,28 @@ export const api = {
     );
   },
 
+  updateUserProfile(
+    token: string,
+    userId: string,
+    payload: { name?: string; icNumber?: string; email?: string }
+  ): Promise<{ user: PublicUser }> {
+    return requestJson(
+      `/api/users/${encodeURIComponent(userId)}/profile`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      },
+      token
+    );
+  },
+
   adminCreateUser(
     token: string,
     payload: {
       userId: string;
       name: string;
+      icNumber?: string;
+      email?: string;
       role: 'pelatih' | 'pengajar' | 'admin';
       pin?: string;
       password?: string;
@@ -578,6 +726,8 @@ export const api = {
     payload: {
       userId?: string;
       name?: string;
+      icNumber?: string;
+      email?: string;
       role?: UserRole;
       status?: ApprovalStatus;
       supervisorId?: string | null;

@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  CloudUpload,
   Edit3,
+  ExternalLink,
+  FolderOpen,
   Image as ImageIcon,
   KeyRound,
   MessageCircle,
@@ -15,15 +18,44 @@ import {
   X,
 } from 'lucide-react';
 import { api, ApiError } from '../lib/api.ts';
+import {
+  applyDriveFolderAndFilePermissions,
+  buildTraineeFolderName,
+  buildTrainingSummaryReportBlob,
+  computeAuthorizedEmailsForTrainee,
+  type CurriculumTreeEnsureResult,
+  type DriveRegistrySyncResult,
+  ensureCurriculumFolderTreeInDrive,
+  getGoogleDriveAccessToken,
+  getGoogleWorkspaceUser,
+  initGoogleWorkspaceAuth,
+  performTwoWayDriveSync,
+  resolveHierarchicalTraineeDriveFolder,
+  signInWithGoogleDrive,
+  upsertDriveFileInFolder,
+} from '../lib/googleDrive.ts';
+import { GoogleSignInButton } from './GoogleSignInButton.tsx';
 import type {
+  AccessLogEntry,
+  AccessTierRole,
   ApprovalStatus,
   BrandingConfig,
   CUModule,
   LearningSection,
   PublicUser,
+  SopCheckProgress,
   TopicLevel,
+  TugasanPaper,
+  TugasanSubmission,
   UserRole,
 } from '../types.ts';
+
+function toAccessTierLabel(role: UserRole): AccessTierRole {
+  if (role === 'master_admin') return 'MASTER_ADMIN';
+  if (role === 'admin') return 'ADMIN';
+  if (role === 'pengajar') return 'PENGAJAR';
+  return 'PELATIH';
+}
 
 interface AdminPanelViewProps {
   token: string;
@@ -31,6 +63,10 @@ interface AdminPanelViewProps {
   branding: BrandingConfig;
   levels: TopicLevel[];
   cus: CUModule[];
+  sopProgress?: SopCheckProgress[];
+  accessLogs?: AccessLogEntry[];
+  tugasanPapers?: TugasanPaper[];
+  tugasanSubmissions?: TugasanSubmission[];
   onBrandingUpdated: (branding: BrandingConfig) => void;
   onRefreshWorkspace: () => Promise<void>;
   onJumpToCu: (levelId: string, section: LearningSection, cuId: string) => void;
@@ -42,6 +78,10 @@ export function AdminPanelView({
   branding,
   levels,
   cus,
+  sopProgress = [],
+  accessLogs = [],
+  tugasanPapers = [],
+  tugasanSubmissions = [],
   onBrandingUpdated,
   onRefreshWorkspace,
   onJumpToCu,
@@ -68,12 +108,44 @@ export function AdminPanelView({
   const [footerCaptionInput, setFooterCaptionInput] = useState(branding.footerCaption);
   const [pendingTitleInput, setPendingTitleInput] = useState(branding.pendingTitle);
   const [pendingMessageInput, setPendingMessageInput] = useState(branding.pendingMessage);
+  const [collegeNameInput, setCollegeNameInput] = useState(branding.collegeName);
+  const [collegeAddressInput, setCollegeAddressInput] = useState(branding.collegeAddress);
+  const [driveRecordsFolderUrlInput, setDriveRecordsFolderUrlInput] = useState(
+    branding.driveRecordsFolderUrl
+  );
   const [paymentQrTitleInput, setPaymentQrTitleInput] = useState(branding.paymentQrTitle);
   const [paymentQrNoteInput, setPaymentQrNoteInput] = useState(branding.paymentQrNote);
   const [whatsappQrTitleInput, setWhatsappQrTitleInput] = useState(branding.whatsappQrTitle);
   const [whatsappQrNoteInput, setWhatsappQrNoteInput] = useState(branding.whatsappQrNote);
   const [whatsappUrlInput, setWhatsappUrlInput] = useState(branding.whatsappUrl);
   const [brandingBusy, setBrandingBusy] = useState(false);
+
+  // Google Drive Batch Trainee Archive Sync state
+  const [driveConnected, setDriveConnected] = useState(() => Boolean(getGoogleDriveAccessToken()));
+  const [googleEmail, setGoogleEmail] = useState<string | null>(
+    () => getGoogleWorkspaceUser()?.email || null
+  );
+  const [syncingBatchDrive, setSyncingBatchDrive] = useState(false);
+  const [generatingTree, setGeneratingTree] = useState(false);
+  const [treeResult, setTreeResult] = useState<CurriculumTreeEnsureResult | null>(null);
+  const [registrySyncInfo, setRegistrySyncInfo] = useState<DriveRegistrySyncResult | null>(null);
+  const [syncedFolders, setSyncedFolders] = useState<
+    { traineeName: string; folderName: string; folderUrl: string; created: boolean }[]
+  >([]);
+
+  useEffect(() => {
+    const unsub = initGoogleWorkspaceAuth(
+      (gUser) => {
+        setDriveConnected(true);
+        setGoogleEmail(gUser.email || gUser.displayName || 'Akaun Google');
+      },
+      () => {
+        setDriveConnected(Boolean(getGoogleDriveAccessToken()));
+        if (!getGoogleDriveAccessToken()) setGoogleEmail(null);
+      }
+    );
+    return unsub;
+  }, []);
   const logoInputRef = useRef<HTMLInputElement | null>(null);
   const bannerInputRef = useRef<HTMLInputElement | null>(null);
   const paymentQrInputRef = useRef<HTMLInputElement | null>(null);
@@ -95,6 +167,9 @@ export function AdminPanelView({
     setFooterCaptionInput(branding.footerCaption);
     setPendingTitleInput(branding.pendingTitle);
     setPendingMessageInput(branding.pendingMessage);
+    setCollegeNameInput(branding.collegeName);
+    setCollegeAddressInput(branding.collegeAddress);
+    setDriveRecordsFolderUrlInput(branding.driveRecordsFolderUrl);
     setPaymentQrTitleInput(branding.paymentQrTitle);
     setPaymentQrNoteInput(branding.paymentQrNote);
     setWhatsappQrTitleInput(branding.whatsappQrTitle);
@@ -116,6 +191,9 @@ export function AdminPanelView({
     branding.footerCaption,
     branding.pendingTitle,
     branding.pendingMessage,
+    branding.collegeName,
+    branding.collegeAddress,
+    branding.driveRecordsFolderUrl,
     branding.paymentQrTitle,
     branding.paymentQrNote,
     branding.whatsappQrTitle,
@@ -131,6 +209,8 @@ export function AdminPanelView({
   // Create user state
   const [newUserId, setNewUserId] = useState('');
   const [newName, setNewName] = useState('');
+  const [newIcNumber, setNewIcNumber] = useState('');
+  const [newEmail, setNewEmail] = useState('');
   const [newRole, setNewRole] = useState<'pelatih' | 'pengajar' | 'admin'>('pengajar');
   const [newPin, setNewPin] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -143,6 +223,8 @@ export function AdminPanelView({
   const [editUserDraft, setEditUserDraft] = useState<{
     userId: string;
     name: string;
+    icNumber: string;
+    email: string;
     role: 'pelatih' | 'pengajar' | 'admin';
     status: ApprovalStatus;
     supervisorId: string;
@@ -180,18 +262,39 @@ export function AdminPanelView({
   const [cuDesc, setCuDesc] = useState('');
   const [confirmDeleteCuId, setConfirmDeleteCuId] = useState<string | null>(null);
 
-  async function loadUsers() {
+  async function loadUsers(): Promise<PublicUser[]> {
     setLoadingUsers(true);
     try {
       const res = await api.getUsers(token);
       setUsers(res.users);
+      return res.users;
     } catch (err) {
       setMsg({
         type: 'err',
         text: err instanceof ApiError ? err.message : 'Gagal memuatkan data pengguna.',
       });
+      return users;
     } finally {
       setLoadingUsers(false);
+    }
+  }
+
+  async function syncLiveRegistryIfConnected() {
+    const accessToken = getGoogleDriveAccessToken();
+    if (!accessToken) return null;
+    try {
+      const twoWay = await performTwoWayDriveSync(accessToken, branding.driveRecordsFolderId, {
+        onReconcile: (remote) => api.reconcileDriveSystemRegistry(token, remote),
+        onFetchLatest: () => api.getDriveSystemRegistry(token),
+        syncPermissions: true,
+      });
+      setRegistrySyncInfo(twoWay.syncResult);
+      if (twoWay.reconciledCount > 0) {
+        await loadUsers();
+      }
+      return twoWay.syncResult;
+    } catch {
+      return null;
     }
   }
 
@@ -259,10 +362,17 @@ export function AdminPanelView({
       setMsg({ type: 'err', text: 'PIN akses mestilah tepat 6 digit nombor.' });
       return;
     }
+    const cleanNewEmail = newEmail.trim().toLowerCase();
+    if (cleanNewEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanNewEmail)) {
+      setMsg({ type: 'err', text: 'Format emel Google tidak sah.' });
+      return;
+    }
     try {
       await api.adminCreateUser(token, {
         userId: newUserId.trim(),
         name: newName,
+        icNumber: newIcNumber.trim(),
+        email: cleanNewEmail || undefined,
         role: newRole,
         pin: newRole === 'admin' ? undefined : newPin,
         password: newRole === 'admin' ? newPassword : undefined,
@@ -272,12 +382,22 @@ export function AdminPanelView({
       });
       setNewUserId('');
       setNewName('');
+      setNewIcNumber('');
+      setNewEmail('');
       setNewPin('');
       setNewPassword('');
       if (newRole === 'admin') setNewRole('pengajar');
       await loadUsers();
       await onRefreshWorkspace();
-      setMsg({ type: 'ok', text: 'Pengguna baharu berjaya ditambah.' });
+      const synced = await syncLiveRegistryIfConnected();
+      setMsg({
+        type: 'ok',
+        text:
+          'Pengguna baharu berjaya ditambah.' +
+          (synced
+            ? ' _SYSTEM_ACCESS_REGISTRY.json, log perubahan & kebenaran Google Drive telah dikemaskini.'
+            : ''),
+      });
     } catch (err) {
       setMsg({ type: 'err', text: err instanceof ApiError ? err.message : 'Gagal menambah pengguna.' });
     }
@@ -290,6 +410,8 @@ export function AdminPanelView({
     setEditUserDraft({
       userId: u.userId,
       name: u.name,
+      icNumber: u.icNumber || '',
+      email: u.email || '',
       role: u.role as 'pelatih' | 'pengajar' | 'admin',
       status: u.status,
       supervisorId: u.supervisorId || '',
@@ -302,6 +424,11 @@ export function AdminPanelView({
   async function handleSaveUserEdit(userId: string) {
     if (!editUserDraft) return;
     setMsg(null);
+    const cleanEmail = editUserDraft.email.trim().toLowerCase();
+    if (cleanEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      setMsg({ type: 'err', text: 'Format emel Google tidak sah.' });
+      return;
+    }
     if (editUserDraft.role === 'admin') {
       if (editUserDraft.newPassword && editUserDraft.newPassword.length < 8) {
         setMsg({ type: 'err', text: 'Kata laluan Admin baharu mestilah sekurang-kurangnya 8 aksara.' });
@@ -315,6 +442,8 @@ export function AdminPanelView({
       await api.adminUpdateUser(token, userId, {
         userId: editUserDraft.userId.trim(),
         name: editUserDraft.name,
+        icNumber: editUserDraft.icNumber.trim(),
+        email: cleanEmail,
         role: editUserDraft.role as UserRole,
         status: editUserDraft.role === 'admin' ? 'approved' : editUserDraft.status,
         supervisorId: editUserDraft.role === 'pelatih' ? editUserDraft.supervisorId || null : null,
@@ -328,7 +457,15 @@ export function AdminPanelView({
       setEditUserDraft(null);
       await loadUsers();
       await onRefreshWorkspace();
-      setMsg({ type: 'ok', text: 'Maklumat pengguna berjaya dikemas kini.' });
+      const synced = await syncLiveRegistryIfConnected();
+      setMsg({
+        type: 'ok',
+        text:
+          'Maklumat pengguna berjaya dikemas kini.' +
+          (synced
+            ? ' _SYSTEM_ACCESS_REGISTRY.json, log perubahan & kebenaran Google Drive telah dikemaskini.'
+            : ''),
+      });
     } catch (err) {
       setMsg({
         type: 'err',
@@ -344,7 +481,15 @@ export function AdminPanelView({
       setConfirmDeleteUserId(null);
       await loadUsers();
       await onRefreshWorkspace();
-      setMsg({ type: 'ok', text: 'Akaun pengguna berjaya dipadam.' });
+      const synced = await syncLiveRegistryIfConnected();
+      setMsg({
+        type: 'ok',
+        text:
+          'Akaun pengguna berjaya dipadam.' +
+          (synced
+            ? ' _SYSTEM_ACCESS_REGISTRY.json & folder ADMIN di Drive telah dikemaskini.'
+            : ''),
+      });
     } catch (err) {
       setMsg({ type: 'err', text: err instanceof ApiError ? err.message : 'Gagal memadam pengguna.' });
     }
@@ -452,6 +597,9 @@ export function AdminPanelView({
         footerCaption: footerCaptionInput,
         pendingTitle: pendingTitleInput,
         pendingMessage: pendingMessageInput,
+        collegeName: collegeNameInput,
+        collegeAddress: collegeAddressInput,
+        driveRecordsFolderUrl: driveRecordsFolderUrlInput,
       });
       onBrandingUpdated(res.branding);
       setMsg({ type: 'ok', text: 'Semua tulisan dan tetapan portal berjaya dikemas kini.' });
@@ -462,6 +610,193 @@ export function AdminPanelView({
       });
     } finally {
       setBrandingBusy(false);
+    }
+  }
+
+  async function handleSaveCollegeInfo(e: React.FormEvent) {
+    e.preventDefault();
+    setMsg(null);
+    setBrandingBusy(true);
+    try {
+      const res = await api.updateBrandingText(token, {
+        collegeName: collegeNameInput,
+        collegeAddress: collegeAddressInput,
+        driveRecordsFolderUrl: driveRecordsFolderUrlInput,
+      });
+      onBrandingUpdated(res.branding);
+      setMsg({
+        type: 'ok',
+        text: 'Nama, alamat rasmi kolej dan pautan Folder Google Drive rekod latihan berjaya disimpan.',
+      });
+    } catch (err) {
+      setMsg({
+        type: 'err',
+        text: err instanceof ApiError ? err.message : 'Gagal menyimpan maklumat rasmi kolej.',
+      });
+    } finally {
+      setBrandingBusy(false);
+    }
+  }
+
+  async function handleGenerateCurriculumTreeInDrive() {
+    setMsg(null);
+    setGeneratingTree(true);
+    try {
+      let accessToken = getGoogleDriveAccessToken();
+      if (!accessToken) {
+        const signed = await signInWithGoogleDrive();
+        accessToken = signed.accessToken;
+        setDriveConnected(true);
+        setGoogleEmail(signed.user.email || signed.user.displayName || 'Akaun Google');
+      }
+      const res = await ensureCurriculumFolderTreeInDrive(
+        accessToken,
+        branding.driveRecordsFolderId,
+        levels,
+        cus
+      );
+      setTreeResult(res);
+      setMsg({
+        type: 'ok',
+        text: `Struktur folder KURSUS → Kod NOSS → CU disahkan di Google Drive: ${res.nossCount} Kod NOSS, ${res.cusCount} folder CU (${res.cusCreated} baharu, ${res.cusExisting} sedia ada), ${res.filesScannedCount} fail diimbas.`,
+      });
+    } catch (err) {
+      setMsg({
+        type: 'err',
+        text:
+          err instanceof Error
+            ? err.message
+            : 'Gagal menjana atau membaca struktur KURSUS → Kod NOSS → CU di Google Drive.',
+      });
+    } finally {
+      setGeneratingTree(false);
+    }
+  }
+
+  async function handleBatchSyncAllTraineesToDrive() {
+    setMsg(null);
+    setSyncingBatchDrive(true);
+    try {
+      let accessToken = getGoogleDriveAccessToken();
+      if (!accessToken) {
+        const signed = await signInWithGoogleDrive();
+        accessToken = signed.accessToken;
+        setDriveConnected(true);
+        setGoogleEmail(signed.user.email || signed.user.displayName || 'Akaun Google');
+      }
+
+      const twoWay = await performTwoWayDriveSync(accessToken, branding.driveRecordsFolderId, {
+        onReconcile: (remote) => api.reconcileDriveSystemRegistry(token, remote),
+        onFetchLatest: () => api.getDriveSystemRegistry(token),
+        syncPermissions: true,
+      });
+      const regSync = twoWay.syncResult;
+      const latestPayload = twoWay.latestPayload;
+      setRegistrySyncInfo(regSync);
+
+      if (twoWay.reconciledCount > 0) {
+        await loadUsers();
+        await onRefreshWorkspace();
+      }
+
+      const approvedTrainees = latestPayload.users.filter(
+        (u) => u.role === 'pelatih' && u.status === 'approved'
+      );
+
+      const results: {
+        traineeName: string;
+        folderName: string;
+        folderUrl: string;
+        created: boolean;
+      }[] = [];
+      let totalFilePermsApplied = regSync.permissionsAppliedCount;
+
+      for (const trainee of approvedTrainees) {
+        const folder = await resolveHierarchicalTraineeDriveFolder(
+          accessToken,
+          branding.driveRecordsFolderId,
+          trainee.supervisorName === '-' ? undefined : trainee.supervisorName,
+          trainee.icNumber === '-' ? '' : trainee.icNumber,
+          trainee.userId,
+          trainee.name,
+          { ensureApprovedSubfolder: true }
+        );
+        const approvedTargetId = folder.approvedRecordsFolderId || folder.id;
+        const traineeSubs = tugasanSubmissions.filter((s) => s.userId === trainee.id);
+        const traineeSop = sopProgress.filter((p) => p.userId === trainee.id);
+        const traineeLogs = accessLogs.filter((l) => l.userId === trainee.id);
+        const blob = buildTrainingSummaryReportBlob({
+          collegeName: branding.collegeName,
+          collegeAddress: branding.collegeAddress,
+          traineeName: trainee.name,
+          traineeIc: trainee.icNumber || '-',
+          traineeCodeId: trainee.userId,
+          levels,
+          cus,
+          papers: tugasanPapers,
+          submissions: traineeSubs,
+          sopProgress: traineeSop,
+          accessLogs: traineeLogs,
+        });
+        const folderLabel = buildTraineeFolderName(
+          trainee.icNumber === '-' ? '' : trainee.icNumber,
+          trainee.userId
+        );
+        const reportFile = await upsertDriveFileInFolder(
+          accessToken,
+          approvedTargetId,
+          `Rekod-Latihan-Diluluskan-${folderLabel}.html`,
+          'text/html',
+          blob
+        );
+
+        const authEmails = computeAuthorizedEmailsForTrainee(trainee, latestPayload.users);
+        if (authEmails.allAuthorizedEmails.length > 0) {
+          const folderPerm = await applyDriveFolderAndFilePermissions(accessToken, approvedTargetId, {
+            writerEmails: authEmails.writerEmails,
+            readerEmails: authEmails.readerEmails,
+            pruneUnauthorized: true,
+          });
+          const filePerm = await applyDriveFolderAndFilePermissions(accessToken, reportFile.id, {
+            writerEmails: authEmails.writerEmails,
+            readerEmails: authEmails.readerEmails,
+            pruneUnauthorized: true,
+          });
+          totalFilePermsApplied += folderPerm.applied.length + filePerm.applied.length;
+        }
+
+        results.push({
+          traineeName: trainee.name,
+          folderName: `${folder.pathLabel} / REKOD_DILULUSKAN`,
+          folderUrl: folder.approvedRecordsFolderUrl || folder.webViewLink,
+          created: folder.created,
+        });
+      }
+
+      setRegistrySyncInfo({
+        ...regSync,
+        permissionsAppliedCount: totalFilePermsApplied,
+      });
+      setSyncedFolders(results);
+      if (cus[0]) {
+        await api.logAccess(token, cus[0].id, 'sync_drive').catch(() => {});
+      }
+      setMsg({
+        type: 'ok',
+        text: `Penyegerakan dua hala _SYSTEM_ACCESS_REGISTRY.json selesai (${regSync.totalUsers} pengguna${
+          twoWay.reconciledCount > 0 ? `, ${twoWay.reconciledCount} rekod diselaraskan dari Drive` : ''
+        }). Rekod latihan disimpan ke REKOD_DILULUSKAN bagi ${results.length} pelatih dengan ${totalFilePermsApplied} kebenaran emel Drive.`,
+      });
+    } catch (err) {
+      setMsg({
+        type: 'err',
+        text:
+          err instanceof Error
+            ? err.message
+            : 'Gagal menyelaraskan folder rekod & senarai akses ke Google Drive.',
+      });
+    } finally {
+      setSyncingBatchDrive(false);
     }
   }
 
@@ -824,6 +1159,34 @@ export function AdminPanelView({
                   className="w-full px-3 py-2 text-sm border border-[#263f73] rounded-lg bg-[#071024] text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#e5b94c]"
                 />
               </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  No. Kad Pengenalan (MyKad)
+                </label>
+                <input
+                  type="text"
+                  maxLength={20}
+                  autoComplete="off"
+                  value={newIcNumber}
+                  onChange={(e) => setNewIcNumber(e.target.value.replace(/[^0-9-]/g, '').slice(0, 20))}
+                  placeholder="cth: 020514-10-1234"
+                  className="w-full px-3 py-2 text-sm font-mono tabular-nums border border-[#263f73] rounded-lg bg-[#071024] text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#e5b94c]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Emel Google (Untuk Kebenaran Rekod Drive)
+                </label>
+                <input
+                  type="email"
+                  maxLength={120}
+                  autoComplete="off"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  placeholder="cth: nama@gmail.com"
+                  className="w-full px-3 py-2 text-sm border border-[#263f73] rounded-lg bg-[#071024] text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#e5b94c]"
+                />
+              </div>
 
               {newRole === 'admin' ? (
                 <div>
@@ -978,6 +1341,30 @@ export function AdminPanelView({
                               placeholder="Nama Penuh"
                               className="w-full px-2.5 py-1.5 text-xs border border-[#263f73] rounded bg-[#071024] text-slate-100 placeholder:text-slate-500"
                             />
+                            <input
+                              type="text"
+                              value={editUserDraft.icNumber}
+                              onChange={(e) =>
+                                setEditUserDraft({
+                                  ...editUserDraft,
+                                  icNumber: e.target.value.replace(/[^0-9-]/g, '').slice(0, 20),
+                                })
+                              }
+                              placeholder="No. Kad Pengenalan (MyKad)"
+                              className="w-full px-2.5 py-1.5 text-xs font-mono tabular-nums border border-[#263f73] rounded bg-[#071024] text-slate-100 placeholder:text-slate-500"
+                            />
+                            <input
+                              type="email"
+                              value={editUserDraft.email}
+                              onChange={(e) =>
+                                setEditUserDraft({
+                                  ...editUserDraft,
+                                  email: e.target.value,
+                                })
+                              }
+                              placeholder="Emel Google (untuk kebenaran Drive)"
+                              className="w-full px-2.5 py-1.5 text-xs border border-[#263f73] rounded bg-[#071024] text-slate-100 placeholder:text-slate-500"
+                            />
                             {editUserDraft.role === 'admin' ? (
                               <input
                                 type="text"
@@ -1124,10 +1511,13 @@ export function AdminPanelView({
                           <p className="font-medium text-white">{u.name}</p>
                           <p className="text-xs font-mono text-slate-400">
                             ID: {u.userId}
+                            {u.icNumber ? ` · MyKad: ${u.icNumber}` : ''}
                             {u.email && (u.role !== 'master_admin' || isMasterAdmin) ? ` · ${u.email}` : ''}
                           </p>
                         </td>
-                        <td className="py-3.5 px-3 text-xs font-mono text-slate-300">{u.role}</td>
+                        <td className="py-3.5 px-3 text-xs font-mono">
+                          <span className="text-[#f0cb63] font-semibold">{toAccessTierLabel(u.role)}</span>
+                        </td>
                         <td className="py-3.5 px-3 text-xs text-slate-300">
                           {u.role === 'pelatih'
                             ? `${u.supervisorName || 'Admin'} · ${lvl?.code || 'Tiada Tahap'}`
@@ -1204,7 +1594,80 @@ export function AdminPanelView({
 
       {/* TAB 2: CURRICULUM LEVELS (2 SUB TEORI & 2 SUB AMALI) & CU */}
       {activeTab === 'curriculum' && (
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="space-y-6">
+          <div className="bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <FolderOpen className="w-4 h-4 text-[#f0cb63]" />
+                <span>Sahkan &amp; Jana Struktur Kurikulum Google Drive (KURSUS &rarr; Kod NOSS &rarr; Folder CU)</span>
+              </h3>
+              <p className="mt-1 text-xs text-slate-300">
+                Membaca dan memastikan laluan sebenar{' '}
+                <span className="font-mono text-[#f0cb63]">KURSUS &rarr; F432-005-2:2019 (Kod NOSS) &rarr; C01, C02... (Folder CU)</span>{' '}
+                tanpa lapisan TAHAP 2..5. Semua fail (KP, KT, KK, PMT/PMA, Penilaian Teori) diimbas terus dari dalam folder CU.
+              </p>
+            </div>
+            <div className="shrink-0">
+              {!driveConnected ? (
+                <GoogleSignInButton
+                  onClick={() => void handleGenerateCurriculumTreeInDrive()}
+                  disabled={generatingTree}
+                />
+              ) : (
+                <button
+                  type="button"
+                  disabled={generatingTree}
+                  onClick={() => void handleGenerateCurriculumTreeInDrive()}
+                  className="px-4 py-2 text-xs font-semibold text-[#041434] bg-[#e5b94c] hover:bg-[#f0cb63] disabled:opacity-60 rounded-lg inline-flex items-center gap-1.5 whitespace-nowrap"
+                >
+                  <FolderOpen className="w-3.5 h-3.5" />
+                  <span>{generatingTree ? 'Menyemak & Menjana...' : 'Sahkan Struktur KURSUS Drive'}</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {treeResult && (
+            <div className="bg-[#081228] border border-emerald-700/50 rounded-xl p-4 space-y-2.5 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-emerald-300 font-semibold">
+                  Struktur Drive Sedia: {treeResult.nossCount} Kod NOSS · {treeResult.cusCount} Folder CU (
+                  {treeResult.cusCreated} baharu, {treeResult.cusExisting} sedia ada) ·{' '}
+                  {treeResult.filesScannedCount} fail diimbas
+                </p>
+                <a
+                  href={treeResult.kursusFolder.webViewLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#f0cb63] hover:underline inline-flex items-center gap-1 font-mono"
+                >
+                  <FolderOpen className="w-3.5 h-3.5" />
+                  <span>Buka Folder {treeResult.kursusFolder.name}</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {treeResult.nossFolders.map((nf) => (
+                  <a
+                    key={nf.levelId}
+                    href={nf.webViewLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-2.5 py-1.5 rounded bg-[#0b1733] border border-[#263f73] hover:border-[#e5b94c] text-[#f0cb63] inline-flex items-center gap-1.5 font-mono"
+                  >
+                    <FolderOpen className="w-3.5 h-3.5" />
+                    <span>{nf.name}</span>
+                    <span className="text-slate-400">
+                      ({nf.cuCount} CU · {nf.filesCount} fail)
+                    </span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="grid lg:grid-cols-2 gap-6">
           <div className="bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-6 space-y-5">
             <h3 className="text-base font-bold text-white">Urus Topik / Tahap (2 Sub Teori &amp; 2 Sub Amali)</h3>
             <form onSubmit={handleCreateLevel} className="space-y-3 p-4 bg-[#071024] rounded-lg border border-[#1a2f5c]">
@@ -1518,6 +1981,7 @@ export function AdminPanelView({
             </div>
           </div>
         </div>
+        </div>
       )}
 
       {/* TAB 3: MATERIAL SLOTS AUDIT */}
@@ -1611,7 +2075,7 @@ export function AdminPanelView({
                     <span>Logo Portal</span>
                   </h3>
                   <p className="mt-1 text-xs text-slate-300">
-                    Dipaparkan pada bar atas portal dan skrin log masuk. Format PNG, JPG/JPEG atau WEBP (maks 8MB).
+                    Dipaparkan pada bar atas portal, skrin log masuk, dan kepala surat cetakan Kertas Tugasan. Format PNG, JPG/JPEG atau WEBP (maks 8MB).
                   </p>
                 </div>
                 <span className="text-xs font-medium text-slate-400 whitespace-nowrap">
@@ -1732,6 +2196,269 @@ export function AdminPanelView({
               </div>
             </section>
           </div>
+
+          {/* Maklumat Rasmi Kolej & Folder Google Drive Rekod Latihan */}
+          <form
+            onSubmit={handleSaveCollegeInfo}
+            className="bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-6 space-y-4"
+          >
+            <div className="pb-3 border-b border-[#1a2f5c]">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-[#f0cb63]" />
+                <span>Maklumat Kolej, Cetakan Rasmi &amp; Folder Google Drive Rekod Latihan</span>
+              </h3>
+              <p className="mt-1 text-xs text-slate-300">
+                Logo Portal di atas bersama Nama dan Alamat Rasmi Kolej dicetak pada Kertas Tugasan, manakala semua rekod latihan yang dijana akan disimpan ke Folder Google Drive di bawah mengikut{' '}
+                <span className="text-[#f0cb63] font-medium">No. Kad Pengenalan pengguna</span>.
+              </p>
+            </div>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Nama Kolej / Pusat Bertauliah
+                </label>
+                <input
+                  type="text"
+                  required
+                  maxLength={120}
+                  value={collegeNameInput}
+                  onChange={(e) => setCollegeNameInput(e.target.value)}
+                  placeholder="cth: KOLEJ KEMAHIRAN TEKNIKAL..."
+                  className="w-full px-3 py-2 text-sm border border-[#263f73] rounded-lg bg-[#071024] text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#e5b94c]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Alamat Rasmi Kolej (Untuk Cetakan Kepala Surat)
+                </label>
+                <textarea
+                  rows={2}
+                  maxLength={300}
+                  value={collegeAddressInput}
+                  onChange={(e) => setCollegeAddressInput(e.target.value)}
+                  placeholder="Masukkan alamat penuh kolej..."
+                  className="w-full px-3 py-2 text-sm border border-[#263f73] rounded-lg bg-[#071024] text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#e5b94c]"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-300 mb-1">
+                Pautan atau ID Folder Induk Google Drive (Arkib Rekod Latihan Mengikut No. KP)
+              </label>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="text"
+                  maxLength={240}
+                  value={driveRecordsFolderUrlInput}
+                  onChange={(e) => setDriveRecordsFolderUrlInput(e.target.value)}
+                  placeholder="https://drive.google.com/drive/folders/..."
+                  className="flex-1 px-3 py-2 text-sm font-mono border border-[#263f73] rounded-lg bg-[#071024] text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#e5b94c]"
+                />
+                {branding.driveRecordsFolderUrl && (
+                  <a
+                    href={branding.driveRecordsFolderUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3.5 py-2 text-xs font-medium text-[#f0cb63] bg-[#102045] border border-[#263f73] hover:bg-[#172e61] rounded-lg inline-flex items-center gap-1.5 whitespace-nowrap"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Buka Folder Induk</span>
+                  </a>
+                )}
+              </div>
+              <p className="mt-1 text-[11px] font-mono text-slate-400">
+                ID Folder Aktif: {branding.driveRecordsFolderId}
+              </p>
+            </div>
+            <button
+              type="submit"
+              disabled={brandingBusy}
+              className="px-4 py-2 text-xs font-semibold text-[#041434] bg-[#e5b94c] hover:bg-[#f0cb63] disabled:opacity-60 rounded-lg inline-flex items-center gap-1.5"
+            >
+              <Save className="w-3.5 h-3.5" />
+              <span>{brandingBusy ? 'Menyimpan...' : 'Simpan Maklumat Kolej & Folder Drive'}</span>
+            </button>
+          </form>
+
+          {/* Jana & Susun Folder ADMIN / Pengajar / Pelatih + Senarai Akses Pengguna & Pokok CoCU di Google Drive */}
+          <section className="bg-[#0b1733] border border-[#1a2f5c] rounded-xl p-6 space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <FolderOpen className="w-4 h-4 text-[#f0cb63]" />
+                  <span>Penyegerakan Dua Hala Drive, Pokok CoCU &amp; Kebenaran Rekod Diluluskan</span>
+                </h3>
+                <p className="mt-1 text-xs text-slate-300 leading-relaxed">
+                  Menyelaraskan fail indeks{' '}
+                  <span className="font-mono text-white">_SYSTEM_ACCESS_REGISTRY.json</span>, log perubahan{' '}
+                  <span className="font-mono text-white">LOG_PERUBAHAN_SISTEM.html</span>, struktur{' '}
+                  <span className="font-mono text-[#f0cb63]">ADMIN / Nama Pengajar / No. KP Pelatih / REKOD_DILULUSKAN</span> dengan{' '}
+                  <span className="text-emerald-300 font-medium">Permissions API</span> mengikut emel Master Admin, Admin, Pengajar &amp; Pelatih, serta struktur bahan{' '}
+                  <span className="font-mono text-[#f0cb63]">KURSUS &rarr; Kod NOSS &rarr; Folder CU</span>.
+                </p>
+                {driveConnected && googleEmail && (
+                  <p className="mt-1 text-xs text-emerald-400">
+                    Akaun Google disambung: {googleEmail}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                {!driveConnected ? (
+                  <GoogleSignInButton
+                    onClick={() => void handleBatchSyncAllTraineesToDrive()}
+                    disabled={syncingBatchDrive || generatingTree}
+                  />
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      disabled={generatingTree}
+                      onClick={() => void handleGenerateCurriculumTreeInDrive()}
+                      className="px-3.5 py-2 text-xs font-semibold text-[#f0cb63] bg-[#102045] border border-[#263f73] hover:bg-[#172e61] disabled:opacity-60 rounded-lg inline-flex items-center gap-1.5 whitespace-nowrap"
+                    >
+                      <FolderOpen className="w-3.5 h-3.5" />
+                      <span>
+                        {generatingTree
+                          ? 'Menyemak KURSUS...'
+                          : 'Sahkan Struktur KURSUS → NOSS → CU'}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={syncingBatchDrive}
+                      onClick={() => void handleBatchSyncAllTraineesToDrive()}
+                      className="px-4 py-2 text-xs font-semibold text-[#041434] bg-[#e5b94c] hover:bg-[#f0cb63] disabled:opacity-60 rounded-lg inline-flex items-center gap-1.5 whitespace-nowrap"
+                    >
+                      <CloudUpload className="w-3.5 h-3.5" />
+                      <span>
+                        {syncingBatchDrive
+                          ? 'Menyegerak Drive & Kebenaran...'
+                          : 'Kemaskini Senarai Akses, Rekod & Kebenaran Drive'}
+                      </span>
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {treeResult && (
+              <div className="p-3 rounded-lg bg-[#081228] border border-emerald-700/50 space-y-2 text-xs">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-emerald-300 font-semibold">
+                    Struktur KURSUS Drive Sedia: {treeResult.nossCount} Kod NOSS · {treeResult.cusCount} Folder CU (
+                    {treeResult.cusCreated} baharu, {treeResult.cusExisting} sedia ada) ·{' '}
+                    {treeResult.filesScannedCount} fail diimbas
+                  </p>
+                  <a
+                    href={treeResult.kursusFolder.webViewLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#f0cb63] hover:underline inline-flex items-center gap-1 font-mono"
+                  >
+                    <FolderOpen className="w-3 h-3" />
+                    <span>{treeResult.kursusFolder.name}</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {treeResult.nossFolders.map((nf) => (
+                    <a
+                      key={nf.levelId}
+                      href={nf.webViewLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2.5 py-1 rounded bg-[#071024] border border-[#263f73] hover:border-[#e5b94c] text-[#f0cb63] inline-flex items-center gap-1 font-mono"
+                    >
+                      <FolderOpen className="w-3 h-3" />
+                      <span>{nf.name}</span>
+                      <span className="text-slate-400">
+                        ({nf.cuCount} CU · {nf.filesCount} fail)
+                      </span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {registrySyncInfo && (
+              <div className="p-3 rounded-lg bg-[#071024] border border-[#1a2f5c] flex flex-wrap items-center justify-between gap-3 text-xs">
+                <span className="text-slate-200">
+                  Senarai Akses Terkini: <strong className="text-[#f0cb63]">{registrySyncInfo.totalUsers} pengguna</strong> ·{' '}
+                  {registrySyncInfo.supervisorFolderCount} folder pengajar · {registrySyncInfo.traineeFolderCount} folder pelatih ·{' '}
+                  <strong className="text-emerald-400">{registrySyncInfo.permissionsAppliedCount} kebenaran emel Drive</strong>
+                </span>
+                <div className="flex flex-wrap items-center gap-3">
+                  {registrySyncInfo.systemRegistryUrl && (
+                    <a
+                      href={registrySyncInfo.systemRegistryUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-sky-300 hover:underline font-mono font-medium"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>_SYSTEM_ACCESS_REGISTRY.json</span>
+                    </a>
+                  )}
+                  <a
+                    href={registrySyncInfo.adminFolderUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[#f0cb63] hover:underline font-medium"
+                  >
+                    <FolderOpen className="w-3.5 h-3.5" />
+                    <span>Folder ADMIN</span>
+                  </a>
+                  <a
+                    href={registrySyncInfo.htmlFileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-emerald-400 hover:underline font-semibold"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Senarai_Akses_Pengguna.html</span>
+                  </a>
+                  {registrySyncInfo.changeLogUrl && (
+                    <a
+                      href={registrySyncInfo.changeLogUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-amber-300 hover:underline font-medium"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>LOG_PERUBAHAN_SISTEM.html</span>
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {syncedFolders.length > 0 && (
+              <div className="pt-3 border-t border-[#1a2f5c] grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                {syncedFolders.map((item) => (
+                  <a
+                    key={item.folderName}
+                    href={item.folderUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-3 rounded-lg bg-[#071024] border border-[#1a2f5c] hover:border-[#e5b94c] flex items-center justify-between gap-2 text-xs transition-colors"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-semibold text-white truncate">{item.traineeName}</p>
+                      <p className="font-mono text-[#f0cb63] truncate">
+                        {item.folderName}{' '}
+                        <span className="text-slate-400">
+                          ({item.created ? 'Baharu' : 'Sedia Ada'})
+                        </span>
+                      </p>
+                    </div>
+                    <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  </a>
+                ))}
+              </div>
+            )}
+          </section>
 
           {/* QR Pembayaran & QR WhatsApp (Bawah Portal di Setiap Halaman) */}
           <div className="grid lg:grid-cols-2 gap-6">

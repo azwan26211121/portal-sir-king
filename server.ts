@@ -9,15 +9,21 @@ import { createServer as createViteServer } from 'vite';
 import {
   ADMIN_EMAIL,
   DEFAULT_BRANDING_TEXTS,
+  DEFAULT_COLLEGE_NAME,
+  DEFAULT_DRIVE_RECORDS_FOLDER_ID,
+  DEFAULT_DRIVE_RECORDS_FOLDER_URL,
   DEFAULT_PAYMENT_QR_TITLE,
   DEFAULT_PORTAL_NAME,
   DEFAULT_PORTAL_TAGLINE,
   DEFAULT_SUB_TITLES,
   DEFAULT_WHATSAPP_QR_TITLE,
   UPLOADS_DIR,
+  buildDriveSystemRegistryPayload,
   hashSecret,
   hashToken,
   loadStore,
+  reconcileDriveSystemRegistry,
+  recordSystemChangeLog,
   saveStore,
   toPublicBranding,
   toPublicUser,
@@ -25,7 +31,10 @@ import {
   verifySecret,
 } from './server/store.ts';
 import type { StoredUser } from './server/store.ts';
-import { gradeTugasanWithAI } from './server/aiGrader.ts';
+import {
+  extractQuestionsFromPdfBuffer,
+  gradeTugasanWithAI,
+} from './server/aiGrader.ts';
 import { createDefaultTugasanForCustomCu } from './server/tugasanBank.ts';
 import type {
   AccessLogEntry,
@@ -164,6 +173,25 @@ function validateSafeHttpsUrl(rawUrl: string): { ok: true; normalized: string } 
     return { ok: false, error: 'Alamat rangkaian dalaman tidak dibenarkan.' };
   }
   return { ok: true, normalized: parsed.toString() };
+}
+
+function validateOptionalEmail(
+  raw: unknown
+): { ok: true; email: string } | { ok: false; error: string } {
+  if (raw === undefined || raw === null) {
+    return { ok: true, email: '' };
+  }
+  if (typeof raw !== 'string') {
+    return { ok: false, error: 'Format emel tidak sah.' };
+  }
+  const trimmed = raw.trim().toLowerCase();
+  if (!trimmed) {
+    return { ok: true, email: '' };
+  }
+  if (trimmed.length > 120 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+    return { ok: false, error: 'Sila masukkan alamat emel Google yang sah (contoh: nama@gmail.com).' };
+  }
+  return { ok: true, email: trimmed };
 }
 
 function detectAllowedDocType(
@@ -522,6 +550,49 @@ async function startServer(): Promise<void> {
       if (typeof body.whatsappQrNote === 'string') {
         store.branding.whatsappQrNote = body.whatsappQrNote.trim().slice(0, 160);
       }
+      if (typeof body.collegeName === 'string') {
+        store.branding.collegeName =
+          body.collegeName.trim().slice(0, 120) || DEFAULT_COLLEGE_NAME;
+      }
+      if (typeof body.collegeAddress === 'string') {
+        store.branding.collegeAddress = body.collegeAddress.trim().slice(0, 300);
+      }
+      if (typeof body.driveRecordsFolderUrl === 'string') {
+        const rawDrive = body.driveRecordsFolderUrl.trim();
+        if (!rawDrive) {
+          store.branding.driveRecordsFolderId = DEFAULT_DRIVE_RECORDS_FOLDER_ID;
+          store.branding.driveRecordsFolderUrl = DEFAULT_DRIVE_RECORDS_FOLDER_URL;
+        } else {
+          let extractedId: string | null = null;
+          if (/^[a-zA-Z0-9_-]{10,120}$/.test(rawDrive)) {
+            extractedId = rawDrive;
+          } else {
+            try {
+              const parsed = new URL(rawDrive);
+              if (parsed.hostname.toLowerCase().endsWith('google.com')) {
+                const folderMatch = parsed.pathname.match(/\/folders\/([a-zA-Z0-9_-]{10,120})/);
+                const idParam = parsed.searchParams.get('id');
+                if (folderMatch?.[1]) {
+                  extractedId = folderMatch[1];
+                } else if (idParam && /^[a-zA-Z0-9_-]{10,120}$/.test(idParam)) {
+                  extractedId = idParam;
+                }
+              }
+            } catch {
+              // Invalid URL handled below
+            }
+          }
+          if (!extractedId) {
+            res.status(400).json({
+              error:
+                'Pautan atau ID folder Google Drive tidak sah. Gunakan pautan folder Google Drive rasmi atau ID folder.',
+            });
+            return;
+          }
+          store.branding.driveRecordsFolderId = extractedId;
+          store.branding.driveRecordsFolderUrl = `https://drive.google.com/drive/folders/${extractedId}`;
+        }
+      }
       store.branding.updatedAt = new Date().toISOString();
       saveStore(store);
       res.json({ branding: toPublicBranding(store) });
@@ -771,10 +842,12 @@ async function startServer(): Promise<void> {
 
   app.post('/api/auth/register', (req: Request, res: Response) => {
     const store = loadStore();
-    const { role, userId, name, pin, supervisorId, requestedLevelId } = req.body as {
+    const { role, userId, name, icNumber, email, pin, supervisorId, requestedLevelId } = req.body as {
       role?: unknown;
       userId?: unknown;
       name?: unknown;
+      icNumber?: unknown;
+      email?: unknown;
       pin?: unknown;
       supervisorId?: unknown;
       requestedLevelId?: unknown;
@@ -794,12 +867,19 @@ async function startServer(): Promise<void> {
       res.status(400).json({ error: 'Nama penuh mestilah antara 2 hingga 80 aksara.' });
       return;
     }
+    const emailCheck = validateOptionalEmail(email);
+    if (!emailCheck.ok) {
+      res.status(400).json({ error: emailCheck.error });
+      return;
+    }
     if (!isValidSixDigitPin(pin)) {
       res.status(400).json({ error: 'PIN akses mestilah tepat 6 digit nombor.' });
       return;
     }
     const cleanUserId = userId.trim();
     const cleanName = name.trim();
+    const cleanIcNumber =
+      typeof icNumber === 'string' ? icNumber.trim().slice(0, 20) : '';
     const duplicateUserId = store.users.find(
       (u) => u.userId.trim().toLowerCase() === cleanUserId.toLowerCase()
     );
@@ -816,6 +896,8 @@ async function startServer(): Promise<void> {
         id: `usr-${crypto.randomUUID().slice(0, 8)}`,
         userId: cleanUserId,
         name: cleanName,
+        icNumber: cleanIcNumber,
+        email: emailCheck.email,
         role: 'pengajar',
         status: 'approved',
         pinHash: hashSecret(pin),
@@ -826,6 +908,15 @@ async function startServer(): Promise<void> {
         updatedAt: now,
       };
       store.users.push(newTeacher);
+      recordSystemChangeLog(store, {
+        actorId: newTeacher.id,
+        actorName: newTeacher.name,
+        actorRole: 'pengajar',
+        action: 'register_pengajar',
+        targetUserId: newTeacher.userId,
+        targetName: newTeacher.name,
+        details: `Pendaftaran Pengajar baharu (${newTeacher.userId}${newTeacher.email ? ` · ${newTeacher.email}` : ''}).`,
+      });
       saveStore(store);
       const token = createSessionToken(newTeacher.id);
       res.status(201).json({ token, user: toPublicUser(newTeacher, store.users) });
@@ -855,6 +946,8 @@ async function startServer(): Promise<void> {
       id: `usr-${crypto.randomUUID().slice(0, 8)}`,
       userId: cleanUserId,
       name: cleanName,
+      icNumber: cleanIcNumber,
+      email: emailCheck.email,
       role: 'pelatih',
       status: 'pending',
       pinHash: hashSecret(pin),
@@ -865,6 +958,15 @@ async function startServer(): Promise<void> {
       updatedAt: now,
     };
     store.users.push(newTrainee);
+    recordSystemChangeLog(store, {
+      actorId: newTrainee.id,
+      actorName: newTrainee.name,
+      actorRole: 'pelatih',
+      action: 'register_pelatih',
+      targetUserId: newTrainee.userId,
+      targetName: newTrainee.name,
+      details: `Permohonan pendaftaran Pelatih baharu (${newTrainee.userId} · No. KP: ${cleanIcNumber || '-'}${newTrainee.email ? ` · ${newTrainee.email}` : ''}).`,
+    });
     saveStore(store);
     const token = createSessionToken(newTrainee.id);
     res.status(201).json({ token, user: toPublicUser(newTrainee, store.users) });
@@ -1681,6 +1783,7 @@ async function startServer(): Promise<void> {
       'complete_sop',
       'submit_tugasan',
       'print_tugasan',
+      'sync_drive',
     ];
     if (typeof cuId !== 'string' || !allowedActions.includes(action as AccessLogEntry['action'])) {
       res.status(400).json({ error: 'Rekod akses tidak sah.' });
@@ -1777,6 +1880,7 @@ async function startServer(): Promise<void> {
           userId: user.id,
           userName: user.name,
           userCodeId: user.userId,
+          userIcNumber: user.icNumber || '',
           submittedAt: new Date().toISOString(),
           answers: sanitizedAnswers,
           grades: graded.grades,
@@ -1821,18 +1925,257 @@ async function startServer(): Promise<void> {
   );
 
   app.post(
+    '/api/tugasan/drive-pdf/parse',
+    express.json({ limit: '25mb' }),
+    requireAuth,
+    requireApproved,
+    async (req: AuthenticatedRequest, res: Response) => {
+      const store = loadStore();
+      const user = req.authUser!;
+      const body = (req.body || {}) as {
+        cuId?: unknown;
+        driveFileId?: unknown;
+        fileName?: unknown;
+        pdfBase64?: unknown;
+      };
+      if (typeof body.cuId !== 'string' || typeof body.driveFileId !== 'string') {
+        res.status(400).json({ error: 'Maklumat CU dan fail Google Drive tidak lengkap.' });
+        return;
+      }
+      const cu = store.cus.find((c) => c.id === body.cuId);
+      if (!cu) {
+        res.status(404).json({ error: 'Unit Kompetensi tidak dijumpai.' });
+        return;
+      }
+      if (user.role === 'pelatih' && cu.levelId !== user.approvedLevelId) {
+        res.status(403).json({ error: 'Anda tiada akses ke tahap pembelajaran ini.' });
+        return;
+      }
+      const fileName =
+        typeof body.fileName === 'string' && body.fileName.trim()
+          ? body.fileName.trim().slice(0, 180)
+          : 'Kertas_Drive.pdf';
+      if (typeof body.pdfBase64 !== 'string' || body.pdfBase64.length < 10) {
+        res.status(400).json({ error: 'Data PDF daripada Google Drive tidak sah.' });
+        return;
+      }
+      const pdfBuffer = Buffer.from(body.pdfBase64, 'base64');
+      const isPdfMagic =
+        pdfBuffer.length >= 5 && pdfBuffer.subarray(0, 5).toString('ascii') === '%PDF-';
+      if (!isPdfMagic) {
+        res.status(400).json({ error: 'Fail Google Drive yang dipilih bukan PDF yang sah.' });
+        return;
+      }
+
+      // Match existing mapped CU TugasanPaper if filename matches paperCode/setCode/sourcePdfFileName
+      const normalizedName = fileName.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const cuPapers = store.tugasanPapers.filter((p) => p.cuId === cu.id);
+      const matchedSeeded = cuPapers.find((p) => {
+        const candidates = [p.paperCode, p.setCode, p.sourcePdfFileName || '']
+          .map((s) => s.toLowerCase().replace(/[^a-z0-9]/g, ''))
+          .filter((s) => s.length >= 4);
+        return candidates.some((c) => normalizedName.includes(c));
+      });
+      if (matchedSeeded) {
+        res.json({
+          paper: {
+            ...matchedSeeded,
+            sourceDriveFileId: body.driveFileId,
+            sourceDriveFileName: fileName,
+          },
+          matchedPaperId: matchedSeeded.id,
+        });
+        return;
+      }
+
+      const level = store.levels.find((l) => l.id === cu.levelId);
+      const levelLabel = level ? `${level.code} — ${level.title}` : 'NOSS JPK';
+      const extracted = await extractQuestionsFromPdfBuffer({
+        pdfBuffer,
+        fileName,
+        cu,
+        levelLabel,
+      });
+
+      const dynamicPaper: TugasanPaper = {
+        id: `drive-${body.driveFileId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 60)}`,
+        cuId: cu.id,
+        setCode: 'DRIVE',
+        programCodeTitle: levelLabel.toUpperCase(),
+        tahap: level?.code.replace(/[^0-9]/g, '') || '2',
+        cuCodeTitle: `${cu.code} ${cu.title}`.toUpperCase(),
+        workActivities: [`1. ${cu.title.toUpperCase()}`],
+        paperCode: extracted.paperCode,
+        title: extracted.title,
+        purpose: `Penilaian menggunakan fail PDF asal daripada Google Drive (${fileName}).`,
+        instructions: [
+          'Rujuk halaman kertas soalan PDF asal di sebelah kiri dan lengkapkan jawapan anda.',
+          'Penandaan AI mengembalikan markah dan tanda (✓ / ✗) sahaja tanpa mengubah format PDF asal.',
+        ],
+        passingScore: 60,
+        questions: extracted.questions,
+        references: [`Dokumen Google Drive: ${fileName}`],
+        sourceDriveFileId: body.driveFileId,
+        sourceDriveFileName: fileName,
+        updatedAt: new Date().toISOString(),
+      };
+      res.json({ paper: dynamicPaper });
+    }
+  );
+
+  app.post(
+    '/api/tugasan/drive-pdf/grade',
+    requireAuth,
+    requireApproved,
+    async (req: AuthenticatedRequest, res: Response) => {
+      const store = loadStore();
+      const user = req.authUser!;
+      const body = (req.body || {}) as {
+        cuId?: unknown;
+        driveFileId?: unknown;
+        fileName?: unknown;
+        paper?: TugasanPaper;
+        answers?: unknown;
+      };
+      if (
+        typeof body.cuId !== 'string' ||
+        typeof body.driveFileId !== 'string' ||
+        !body.paper ||
+        !Array.isArray(body.paper.questions) ||
+        body.paper.questions.length === 0
+      ) {
+        res.status(400).json({ error: 'Data kertas penilaian Google Drive tidak lengkap.' });
+        return;
+      }
+      const cu = store.cus.find((c) => c.id === body.cuId);
+      if (!cu) {
+        res.status(404).json({ error: 'Unit Kompetensi tidak dijumpai.' });
+        return;
+      }
+      if (user.role === 'pelatih' && cu.levelId !== user.approvedLevelId) {
+        res.status(403).json({ error: 'Anda tiada akses ke tahap pembelajaran ini.' });
+        return;
+      }
+      if (!body.answers || typeof body.answers !== 'object' || Array.isArray(body.answers)) {
+        res.status(400).json({ error: 'Format jawapan tugasan tidak sah.' });
+        return;
+      }
+      const rawAnswers = body.answers as Record<string, unknown>;
+      const sanitizedAnswers: Record<string, string> = {};
+      let nonEmptyCount = 0;
+      for (const q of body.paper.questions) {
+        const rawVal = rawAnswers[q.id];
+        const val = typeof rawVal === 'string' ? rawVal.trim().slice(0, 4000) : '';
+        sanitizedAnswers[q.id] = val;
+        if (val.length > 0) nonEmptyCount++;
+      }
+      if (nonEmptyCount === 0) {
+        res.status(400).json({
+          error: 'Sila jawab sekurang-kurangnya satu soalan sebelum menghantar untuk penandaan AI.',
+        });
+        return;
+      }
+
+      try {
+        const graded = await gradeTugasanWithAI({
+          paper: body.paper,
+          cu,
+          uploadsDir: UPLOADS_DIR,
+          answers: sanitizedAnswers,
+        });
+        const fileName =
+          typeof body.fileName === 'string' && body.fileName.trim()
+            ? body.fileName.trim().slice(0, 180)
+            : body.paper.sourceDriveFileName || 'Kertas_Drive.pdf';
+
+        const submission: TugasanSubmission = {
+          id: `sub-${crypto.randomUUID().slice(0, 10)}`,
+          templateId: body.paper.id,
+          cuId: cu.id,
+          userId: user.id,
+          userName: user.name,
+          userCodeId: user.userId,
+          userIcNumber: user.icNumber || '',
+          submittedAt: new Date().toISOString(),
+          answers: sanitizedAnswers,
+          grades: graded.grades,
+          totalScore: graded.totalScore,
+          maxTotalScore: graded.maxTotalScore,
+          percentage: graded.percentage,
+          passed: graded.passed,
+          overallFeedback: graded.overallFeedback,
+          gradedByModel: graded.gradedByModel,
+          sourceDriveFileId: body.driveFileId,
+          sourceDriveFileName: fileName,
+        };
+
+        const latestStore = loadStore();
+        latestStore.tugasanSubmissions.push(submission);
+        if (latestStore.tugasanSubmissions.length > 1000) {
+          latestStore.tugasanSubmissions = latestStore.tugasanSubmissions.slice(-1000);
+        }
+        latestStore.accessLogs.push({
+          id: `log-${crypto.randomUUID().slice(0, 8)}`,
+          userId: user.id,
+          userName: user.name,
+          userRole: user.role,
+          cuId: cu.id,
+          cuCode: cu.code,
+          cuTitle: `${cu.title} (Drive: ${fileName} · ${submission.percentage}%)`,
+          action: 'submit_tugasan',
+          timestamp: submission.submittedAt,
+        });
+        if (latestStore.accessLogs.length > 500) {
+          latestStore.accessLogs = latestStore.accessLogs.slice(-500);
+        }
+        recordSystemChangeLog(latestStore, {
+          actorId: user.id,
+          actorName: user.name,
+          actorRole: user.role,
+          action: 'grade_drive_pdf',
+          targetUserId: user.userId,
+          targetName: user.name,
+          details: `Penilaian PDF Drive "${fileName}" (${cu.code}): ${submission.totalScore}/${submission.maxTotalScore} (${submission.percentage}% · ${submission.passed ? 'LULUS' : 'BELUM LULUS'}).`,
+        });
+        saveStore(latestStore);
+        res.status(201).json({ submission });
+      } catch (err) {
+        const message =
+          err instanceof Error
+            ? err.message
+            : 'Penandaan AI gagal diproses buat masa ini. Sila cuba sebentar lagi.';
+        res.status(503).json({ error: message });
+      }
+    }
+  );
+
+  app.post(
     '/api/tugasan/:paperId/print-authorize',
     requireAuth,
     requireApproved,
     (req: AuthenticatedRequest, res: Response) => {
       const store = loadStore();
       const user = req.authUser!;
+      const { submissionId } = (req.body || {}) as { submissionId?: unknown };
       const paper = store.tugasanPapers.find((p) => p.id === req.params.paperId);
-      if (!paper) {
+      const isDynamicDrivePaper = !paper && req.params.paperId.startsWith('drive-');
+      const submission =
+        typeof submissionId === 'string'
+          ? store.tugasanSubmissions.find(
+              (s) =>
+                s.id === submissionId &&
+                s.templateId === req.params.paperId &&
+                (user.role !== 'pelatih' || s.userId === user.id)
+            )
+          : undefined;
+
+      if (!paper && !isDynamicDrivePaper) {
         res.status(404).json({ error: 'Kertas Tugasan tidak dijumpai.' });
         return;
       }
-      const cu = store.cus.find((c) => c.id === paper.cuId);
+
+      const cuId = paper ? paper.cuId : submission?.cuId;
+      const cu = cuId ? store.cus.find((c) => c.id === cuId) : undefined;
       if (!cu) {
         res.status(404).json({ error: 'CU tidak dijumpai.' });
         return;
@@ -1842,27 +2185,17 @@ async function startServer(): Promise<void> {
         return;
       }
 
-      const { submissionId } = (req.body || {}) as { submissionId?: unknown };
-      const submission =
-        typeof submissionId === 'string'
-          ? store.tugasanSubmissions.find(
-              (s) =>
-                s.id === submissionId &&
-                s.templateId === paper.id &&
-                (user.role !== 'pelatih' || s.userId === user.id)
-            )
-          : undefined;
-
+      const passingScore = paper ? paper.passingScore : 60;
       if (user.role === 'pelatih') {
         if (!submission || !submission.passed) {
           res.status(403).json({
-            error: `Cetakan disekat. Markah mestilah lulus (>= ${paper.passingScore}%) sebelum kertas tugasan boleh dicetak.`,
+            error: `Cetakan disekat. Markah mestilah lulus (>= ${passingScore}%) sebelum kertas tugasan boleh dicetak.`,
           });
           return;
         }
       } else if (submission && !submission.passed) {
         res.status(403).json({
-          error: `Rekod penilaian ini berstatus BELUM LULUS (< ${paper.passingScore}%). Hanya kertas lulus layak dicetak.`,
+          error: `Rekod penilaian ini berstatus BELUM LULUS (< ${passingScore}%). Hanya kertas lulus layak dicetak.`,
         });
         return;
       }
@@ -1874,7 +2207,7 @@ async function startServer(): Promise<void> {
         userRole: user.role,
         cuId: cu.id,
         cuCode: cu.code,
-        cuTitle: `${cu.title} (${paper.setCode})`,
+        cuTitle: `${cu.title} (${paper ? paper.setCode : 'DRIVE PDF'})`,
         action: 'print_tugasan',
         timestamp: new Date().toISOString(),
       });
@@ -1884,6 +2217,80 @@ async function startServer(): Promise<void> {
       saveStore(store);
 
       res.json({ authorized: true });
+    }
+  );
+
+  app.patch(
+    '/api/tugasan/submissions/:submissionId/drive-sync',
+    requireAuth,
+    requireApproved,
+    (req: AuthenticatedRequest, res: Response) => {
+      const store = loadStore();
+      const user = req.authUser!;
+      const submission = store.tugasanSubmissions.find(
+        (s) => s.id === req.params.submissionId
+      );
+      if (!submission) {
+        res.status(404).json({ error: 'Rekod penilaian tugasan tidak dijumpai.' });
+        return;
+      }
+      if (user.role === 'pelatih' && submission.userId !== user.id) {
+        res.status(403).json({ error: 'Anda tiada akses ke rekod ini.' });
+        return;
+      }
+
+      const body = (req.body || {}) as Record<string, unknown>;
+      const safeGoogleUrl = (val: unknown): string | undefined => {
+        if (typeof val !== 'string' || !val.trim()) return undefined;
+        try {
+          const parsed = new URL(val.trim());
+          if (
+            parsed.protocol === 'https:' &&
+            (parsed.hostname === 'drive.google.com' || parsed.hostname === 'docs.google.com')
+          ) {
+            return parsed.toString();
+          }
+        } catch {
+          return undefined;
+        }
+        return undefined;
+      };
+
+      if (typeof body.driveFolderId === 'string' && /^[a-zA-Z0-9_-]{5,120}$/.test(body.driveFolderId)) {
+        submission.driveFolderId = body.driveFolderId;
+      }
+      if (typeof body.driveFolderName === 'string') {
+        submission.driveFolderName = body.driveFolderName.trim().slice(0, 120);
+      }
+      const folderUrl = safeGoogleUrl(body.driveFolderUrl);
+      if (folderUrl) submission.driveFolderUrl = folderUrl;
+      if (typeof body.driveFileId === 'string' && /^[a-zA-Z0-9_-]{5,120}$/.test(body.driveFileId)) {
+        submission.driveFileId = body.driveFileId;
+      }
+      const fileUrl = safeGoogleUrl(body.driveFileUrl);
+      if (fileUrl) submission.driveFileUrl = fileUrl;
+      submission.driveSyncedAt = new Date().toISOString();
+
+      const cu = store.cus.find((c) => c.id === submission.cuId);
+      if (cu) {
+        store.accessLogs.push({
+          id: `log-${crypto.randomUUID().slice(0, 8)}`,
+          userId: user.id,
+          userName: user.name,
+          userRole: user.role,
+          cuId: cu.id,
+          cuCode: cu.code,
+          cuTitle: `${cu.title} (Drive: ${submission.driveFolderName || submission.userCodeId})`,
+          action: 'sync_drive',
+          timestamp: new Date().toISOString(),
+        });
+        if (store.accessLogs.length > 500) {
+          store.accessLogs = store.accessLogs.slice(-500);
+        }
+      }
+
+      saveStore(store);
+      res.json({ submission });
     }
   );
 
@@ -2070,6 +2477,142 @@ async function startServer(): Promise<void> {
     }
   );
 
+  app.get(
+    '/api/tugasan/:paperId/source-pdf',
+    requireAuth,
+    requireApproved,
+    (req: AuthenticatedRequest, res: Response) => {
+      const store = loadStore();
+      const user = req.authUser!;
+      const paper = store.tugasanPapers.find((p) => p.id === req.params.paperId);
+      if (!paper) {
+        res.status(404).json({ error: 'Kertas Tugasan tidak dijumpai.' });
+        return;
+      }
+      const cu = store.cus.find((c) => c.id === paper.cuId);
+      if (!cu) {
+        res.status(404).json({ error: 'Unit Kompetensi tidak dijumpai.' });
+        return;
+      }
+      if (user.role === 'pelatih' && cu.levelId !== user.approvedLevelId) {
+        res.status(403).json({ error: 'Anda tiada akses ke tahap pembelajaran ini.' });
+        return;
+      }
+
+      if (paper.sourcePdfStoredName) {
+        const uploadedPath = safeResolveUploadPath(paper.sourcePdfStoredName);
+        if (uploadedPath && fs.existsSync(uploadedPath)) {
+          res.setHeader('Content-Type', 'application/pdf');
+          res.setHeader('Cache-Control', 'no-store');
+          res.sendFile(uploadedPath);
+          return;
+        }
+      }
+
+      if (paper.sourcePdfUrl && paper.sourcePdfUrl.startsWith('/assets/')) {
+        const publicDir = path.resolve(process.cwd(), 'public');
+        const rel = paper.sourcePdfUrl.replace(/^\/+/, '');
+        const resolved = path.resolve(publicDir, rel);
+        if (resolved.startsWith(publicDir + path.sep) && fs.existsSync(resolved)) {
+          res.setHeader('Content-Type', 'application/pdf');
+          res.setHeader('Cache-Control', 'no-store');
+          res.sendFile(resolved);
+          return;
+        }
+      }
+
+      res.status(404).json({ error: 'Fail PDF asal belum dilampirkan pada kertas tugasan ini.' });
+    }
+  );
+
+  app.post(
+    '/api/tugasan/:paperId/source-pdf',
+    requireAuth,
+    requireApproved,
+    requireRole(['pengajar', 'admin', 'master_admin']),
+    upload.single('file'),
+    (req: AuthenticatedRequest, res: Response) => {
+      const store = loadStore();
+      const paper = store.tugasanPapers.find((p) => p.id === req.params.paperId);
+      if (!paper) {
+        res.status(404).json({ error: 'Kertas Tugasan tidak dijumpai.' });
+        return;
+      }
+      if (!req.file) {
+        res.status(400).json({ error: 'Sila pilih fail PDF asal untuk dimuat naik.' });
+        return;
+      }
+      const buf = req.file.buffer;
+      const isPdfMagic = buf.length >= 5 && buf.subarray(0, 5).toString('ascii') === '%PDF-';
+      if (!isPdfMagic) {
+        res.status(400).json({ error: 'Fail yang dimuat naik mestilah dokumen PDF yang sah (%PDF).' });
+        return;
+      }
+
+      if (paper.sourcePdfStoredName) {
+        const prevPath = safeResolveUploadPath(paper.sourcePdfStoredName);
+        if (prevPath && fs.existsSync(prevPath)) {
+          try {
+            fs.unlinkSync(prevPath);
+          } catch {
+            // ignore
+          }
+        }
+      }
+
+      const storedName = `tug_src_${crypto.randomUUID().slice(0, 12)}.pdf`;
+      const targetPath = safeResolveUploadPath(storedName);
+      if (!targetPath) {
+        res.status(500).json({ error: 'Gagal menyelesaikan laluan storan PDF.' });
+        return;
+      }
+      fs.writeFileSync(targetPath, buf);
+
+      paper.sourcePdfStoredName = storedName;
+      paper.sourcePdfFileName = req.file.originalname.slice(0, 140);
+      paper.updatedAt = new Date().toISOString();
+      recordSystemChangeLog(store, {
+        actorId: req.authUser!.id,
+        actorName: req.authUser!.name,
+        actorRole: req.authUser!.role,
+        action: 'upload_tugasan_pdf',
+        details: `Muat naik fail PDF asal "${paper.sourcePdfFileName}" untuk ${paper.paperCode}.`,
+      });
+      saveStore(store);
+      res.json({ paper });
+    }
+  );
+
+  app.delete(
+    '/api/tugasan/:paperId/source-pdf',
+    requireAuth,
+    requireApproved,
+    requireRole(['pengajar', 'admin', 'master_admin']),
+    (req: AuthenticatedRequest, res: Response) => {
+      const store = loadStore();
+      const paper = store.tugasanPapers.find((p) => p.id === req.params.paperId);
+      if (!paper) {
+        res.status(404).json({ error: 'Kertas Tugasan tidak dijumpai.' });
+        return;
+      }
+      if (paper.sourcePdfStoredName) {
+        const prevPath = safeResolveUploadPath(paper.sourcePdfStoredName);
+        if (prevPath && fs.existsSync(prevPath)) {
+          try {
+            fs.unlinkSync(prevPath);
+          } catch {
+            // ignore
+          }
+        }
+      }
+      delete paper.sourcePdfStoredName;
+      delete paper.sourcePdfFileName;
+      paper.updatedAt = new Date().toISOString();
+      saveStore(store);
+      res.json({ paper });
+    }
+  );
+
   app.delete(
     '/api/tugasan/:paperId',
     requireAuth,
@@ -2083,6 +2626,16 @@ async function startServer(): Promise<void> {
         return;
       }
       const [removed] = store.tugasanPapers.splice(idx, 1);
+      if (removed.sourcePdfStoredName) {
+        const prevPath = safeResolveUploadPath(removed.sourcePdfStoredName);
+        if (prevPath && fs.existsSync(prevPath)) {
+          try {
+            fs.unlinkSync(prevPath);
+          } catch {
+            // ignore
+          }
+        }
+      }
       store.tugasanSubmissions = store.tugasanSubmissions.filter(
         (s) => s.templateId !== removed.id
       );
@@ -2092,6 +2645,89 @@ async function startServer(): Promise<void> {
   );
 
   // --- User & Approval Management (Pengajar & Admin) ---
+
+  app.get(
+    '/api/drive/access-registry',
+    requireAuth,
+    requireApproved,
+    requireRole(['pengajar', 'admin', 'master_admin']),
+    (_req: AuthenticatedRequest, res: Response) => {
+      const store = loadStore();
+      res.json({
+        users: store.users.map((u) => toPublicUser(u, store.users)),
+        levels: store.levels,
+      });
+    }
+  );
+
+  app.get(
+    '/api/drive/system-registry',
+    requireAuth,
+    requireApproved,
+    requireRole(['pengajar', 'admin', 'master_admin']),
+    (req: AuthenticatedRequest, res: Response) => {
+      const store = loadStore();
+      const actor = req.authUser!;
+      const visibleUsers =
+        actor.role === 'pengajar'
+          ? store.users.filter(
+              (u) =>
+                u.role === 'master_admin' ||
+                u.role === 'admin' ||
+                u.id === actor.id ||
+                (u.role === 'pelatih' &&
+                  (u.supervisorId === actor.id ||
+                    u.supervisorId === 'admin-root' ||
+                    u.supervisorId === null))
+            )
+          : store.users;
+      res.json({
+        registry: buildDriveSystemRegistryPayload(store, { visibleUsers }),
+        levels: store.levels,
+        cus: store.cus,
+      });
+    }
+  );
+
+  app.post(
+    '/api/drive/system-registry/reconcile',
+    requireAuth,
+    requireApproved,
+    requireRole(['pengajar', 'admin', 'master_admin']),
+    (req: AuthenticatedRequest, res: Response) => {
+      const store = loadStore();
+      const actor = req.authUser!;
+      const stats = reconcileDriveSystemRegistry(store, actor, req.body);
+      if (stats.updatedUsers > 0 || stats.addedLogs > 0) {
+        recordSystemChangeLog(store, {
+          actorId: actor.id,
+          actorName: actor.name,
+          actorRole: actor.role,
+          action: 'drive_two_way_sync',
+          details: `Penyegerakan dua hala Drive selesai (${stats.updatedUsers} profil dikemaskini, ${stats.addedLogs} log ditambah).`,
+        });
+        saveStore(store);
+      }
+      const visibleUsers =
+        actor.role === 'pengajar'
+          ? store.users.filter(
+              (u) =>
+                u.role === 'master_admin' ||
+                u.role === 'admin' ||
+                u.id === actor.id ||
+                (u.role === 'pelatih' &&
+                  (u.supervisorId === actor.id ||
+                    u.supervisorId === 'admin-root' ||
+                    u.supervisorId === null))
+            )
+          : store.users;
+      res.json({
+        ok: true,
+        stats,
+        registry: buildDriveSystemRegistryPayload(store, { visibleUsers }),
+      });
+    }
+  );
 
   app.get(
     '/api/users',
@@ -2159,6 +2795,76 @@ async function startServer(): Promise<void> {
         target.approvedLevelId = null;
       }
       target.updatedAt = new Date().toISOString();
+      recordSystemChangeLog(store, {
+        actorId: actor.id,
+        actorName: actor.name,
+        actorRole: actor.role,
+        action: status === 'approved' ? 'approve_user' : status === 'rejected' ? 'reject_user' : 'pending_user',
+        targetUserId: target.userId,
+        targetName: target.name,
+        details: `Status akses ${target.name} (${target.userId}) ditukar kepada ${status.toUpperCase()}${target.approvedLevelId ? ` · Tahap: ${target.approvedLevelId}` : ''}.`,
+      });
+      saveStore(store);
+      res.json({ user: toPublicUser(target, store.users) });
+    }
+  );
+
+  app.patch(
+    '/api/users/:userId/profile',
+    requireAuth,
+    requireApproved,
+    requireRole(['pengajar', 'admin', 'master_admin']),
+    (req: AuthenticatedRequest, res: Response) => {
+      const store = loadStore();
+      const actor = req.authUser!;
+      const target = store.users.find((u) => u.id === req.params.userId);
+      if (!target) {
+        res.status(404).json({ error: 'Pengguna tidak dijumpai.' });
+        return;
+      }
+      if (actor.role === 'pengajar') {
+        if (
+          target.role !== 'pelatih' ||
+          (target.supervisorId !== actor.id && target.supervisorId !== 'admin-root' && target.supervisorId !== null)
+        ) {
+          res.status(403).json({ error: 'Anda hanya boleh mengemaskini maklumat pelatih di bawah penyeliaan anda.' });
+          return;
+        }
+      }
+      const { name, icNumber, email } = req.body as {
+        name?: unknown;
+        icNumber?: unknown;
+        email?: unknown;
+      };
+      if (typeof name === 'string') {
+        const cleanName = name.trim().slice(0, 80);
+        if (cleanName.length < 2) {
+          res.status(400).json({ error: 'Nama penuh mestilah sekurang-kurangnya 2 aksara.' });
+          return;
+        }
+        target.name = cleanName;
+      }
+      if (typeof icNumber === 'string') {
+        target.icNumber = icNumber.trim().slice(0, 20);
+      }
+      if (email !== undefined) {
+        const emailCheck = validateOptionalEmail(email);
+        if (!emailCheck.ok) {
+          res.status(400).json({ error: emailCheck.error });
+          return;
+        }
+        target.email = emailCheck.email;
+      }
+      target.updatedAt = new Date().toISOString();
+      recordSystemChangeLog(store, {
+        actorId: actor.id,
+        actorName: actor.name,
+        actorRole: actor.role,
+        action: 'update_profile',
+        targetUserId: target.userId,
+        targetName: target.name,
+        details: `Profil ${target.name} (${target.userId}) dikemaskini · No. KP: ${target.icNumber || '-'}${target.email ? ` · Emel: ${target.email}` : ''}.`,
+      });
       saveStore(store);
       res.json({ user: toPublicUser(target, store.users) });
     }
@@ -2174,9 +2880,11 @@ async function startServer(): Promise<void> {
     (req: AuthenticatedRequest, res: Response) => {
       const store = loadStore();
       const actor = req.authUser!;
-      const { userId, name, role, pin, password, status, supervisorId, approvedLevelId } = req.body as {
+      const { userId, name, icNumber, email, role, pin, password, status, supervisorId, approvedLevelId } = req.body as {
         userId?: unknown;
         name?: unknown;
+        icNumber?: unknown;
+        email?: unknown;
         role?: unknown;
         pin?: unknown;
         password?: unknown;
@@ -2190,6 +2898,11 @@ async function startServer(): Promise<void> {
       }
       if (role === 'admin' && actor.role !== 'master_admin') {
         res.status(403).json({ error: 'Hanya Master Admin boleh menambah akaun Admin.' });
+        return;
+      }
+      const emailCheck = validateOptionalEmail(email);
+      if (!emailCheck.ok) {
+        res.status(400).json({ error: emailCheck.error });
         return;
       }
       if (role === 'admin') {
@@ -2220,6 +2933,8 @@ async function startServer(): Promise<void> {
       }
       const cleanUserId = userId.trim();
       const cleanName = name.trim();
+      const cleanIcNumber =
+        typeof icNumber === 'string' ? icNumber.trim().slice(0, 20) : '';
       if (store.users.some((u) => u.userId.trim().toLowerCase() === cleanUserId.toLowerCase())) {
         res.status(409).json({ error: `User ID "${cleanUserId}" telah wujud.` });
         return;
@@ -2240,6 +2955,8 @@ async function startServer(): Promise<void> {
         id: role === 'admin' ? `admin-${crypto.randomUUID().slice(0, 6)}` : `usr-${crypto.randomUUID().slice(0, 8)}`,
         userId: cleanUserId,
         name: cleanName,
+        icNumber: cleanIcNumber,
+        email: emailCheck.email,
         role,
         status: validStatus,
         pinHash: role === 'admin' ? undefined : hashSecret(pin as string),
@@ -2252,6 +2969,15 @@ async function startServer(): Promise<void> {
         updatedAt: now,
       };
       store.users.push(created);
+      recordSystemChangeLog(store, {
+        actorId: actor.id,
+        actorName: actor.name,
+        actorRole: actor.role,
+        action: 'admin_create_user',
+        targetUserId: created.userId,
+        targetName: created.name,
+        details: `Akaun baharu ${created.role.toUpperCase()} dicipta (${created.userId}${created.email ? ` · ${created.email}` : ''}).`,
+      });
       saveStore(store);
       res.status(201).json({ user: toPublicUser(created, store.users) });
     }
@@ -2274,10 +3000,12 @@ async function startServer(): Promise<void> {
         res.status(400).json({ error: 'Akaun Master Admin tidak boleh diubah atau ditukar peranannya di sini.' });
         return;
       }
-      const { userId: nextUserId, name, role, status, supervisorId, approvedLevelId, newPin, newPassword } =
+      const { userId: nextUserId, name, icNumber, email, role, status, supervisorId, approvedLevelId, newPin, newPassword } =
         req.body as {
           userId?: unknown;
           name?: unknown;
+          icNumber?: unknown;
+          email?: unknown;
           role?: unknown;
           status?: unknown;
           supervisorId?: unknown;
@@ -2296,6 +3024,14 @@ async function startServer(): Promise<void> {
           res.status(400).json({ error: 'Had maksimum 2 akaun Admin telah dicapai.' });
           return;
         }
+      }
+      if (email !== undefined) {
+        const emailCheck = validateOptionalEmail(email);
+        if (!emailCheck.ok) {
+          res.status(400).json({ error: emailCheck.error });
+          return;
+        }
+        target.email = emailCheck.email;
       }
 
       if (typeof nextUserId === 'string' && nextUserId.trim() !== '') {
@@ -2317,6 +3053,9 @@ async function startServer(): Promise<void> {
       }
       if (typeof name === 'string' && name.trim().length >= 2) {
         target.name = name.trim().slice(0, 80);
+      }
+      if (typeof icNumber === 'string') {
+        target.icNumber = icNumber.trim().slice(0, 20);
       }
       if (role === 'pelatih' || role === 'pengajar' || (role === 'admin' && actor.role === 'master_admin')) {
         target.role = role;
@@ -2356,6 +3095,15 @@ async function startServer(): Promise<void> {
         }
       }
       target.updatedAt = new Date().toISOString();
+      recordSystemChangeLog(store, {
+        actorId: actor.id,
+        actorName: actor.name,
+        actorRole: actor.role,
+        action: 'admin_update_user',
+        targetUserId: target.userId,
+        targetName: target.name,
+        details: `Maklumat ${target.name} (${target.userId}) dikemaskini · Peranan: ${target.role.toUpperCase()} · Status: ${target.status.toUpperCase()}${target.email ? ` · ${target.email}` : ''}.`,
+      });
       saveStore(store);
       res.json({ user: toPublicUser(target, store.users) });
     }
@@ -2385,6 +3133,15 @@ async function startServer(): Promise<void> {
       }
       store.users.splice(idx, 1);
       store.sessions = store.sessions.filter((s) => s.userId !== req.params.userId);
+      recordSystemChangeLog(store, {
+        actorId: actor.id,
+        actorName: actor.name,
+        actorRole: actor.role,
+        action: 'admin_delete_user',
+        targetUserId: target.userId,
+        targetName: target.name,
+        details: `Akaun ${target.name} (${target.userId} · ${target.role.toUpperCase()}) dipadam oleh pentadbir.`,
+      });
       saveStore(store);
       res.json({ ok: true });
     }

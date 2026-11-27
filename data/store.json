@@ -17,6 +17,10 @@
     "footerCaption": "Imbas QR Pembayaran atau QR WhatsApp rasmi di bawah portal",
     "pendingTitle": "Menunggu Kelulusan Pengajar",
     "pendingMessage": "Pendaftaran akaun anda telah direkodkan. Kandungan nota, latihan Google Form, dan SOP bengkel akan dibuka sebaik sahaja pengajar penyelia meluluskan akaun anda.",
+    "collegeName": "KOLEJ KEMAHIRAN / PUSAT BERTAULIAH (SIRKING)",
+    "collegeAddress": "TINGKAT 1, BLOK AKADEMIK,\nPUSAT LATIHAN KEMAHIRAN ELEKTRIK",
+    "driveRecordsFolderId": "168i3Rpp8PGlGGa-4yNPTtJVCBgiDUc36",
+    "driveRecordsFolderUrl": "https://drive.google.com/drive/folders/168i3Rpp8PGlGGa-4yNPTtJVCBgiDUc36?usp=sharing",
     "customLogoStoredName": null,
     "customLogoMimeType": null,
     "customBannerStoredName": null,
@@ -71,6 +75,20 @@
       "approvedLevelId": null,
       "createdAt": "2026-11-24T04:10:11.043Z",
       "updatedAt": "2026-11-24T04:10:11.043Z"
+    },
+    {
+      "id": "usr-1607117a",
+      "userId": "RAJA",
+      "name": "RAJA AZWAN BIN RAJA AHMAD",
+      "icNumber": "930209065261",
+      "role": "pelatih",
+      "status": "approved",
+      "pinHash": "043dad2b5f9ad5b021a17df17a14a201:51db5d8a289c962976ed24ecf5a40baee4ec3f56c2305d8c79a5822050b969a103e106db65206f74d3765c978af466b0d9d7d0fa569f1758c9533460910cc5d1",
+      "supervisorId": null,
+      "requestedLevelId": "lvl-2",
+      "approvedLevelId": "lvl-2",
+      "createdAt": "2026-11-27T03:34:16.935Z",
+      "updatedAt": "2026-11-27T03:34:16.935Z"
     }
   ],
   "levels": [
@@ -2150,19 +2168,19 @@
     {
       "id": "tug-c01-1",
       "cuId": "cu-201",
-      "setCode": "T(1/5)",
+      "setCode": "KT(1/5)",
       "programCodeTitle": "F432-005-2:2019 SINGLE PHASE ELECTRICAL INSTALLATION AND MAINTENANCE",
       "tahap": "2",
-      "cuCodeTitle": "F432-005-2:2019 - C01 SINGLE PHASE DRAWING",
+      "cuCodeTitle": "F432-005-2:2019 -C01 SINGLE PHASE DRAWING",
       "workActivities": [
         "1. PREPARE SINGLE PHASE DRAWING REQUIREMENTS.",
         "2. PERFORM SINGLE PHASE DRAWING.",
         "3. CALCULATE MATERIALS REQUIREMENT.",
         "4. PROPOSE SINGLE PHASE DRAWING PAPERWORK."
       ],
-      "paperCode": "F432-005-2:2019-C01/T(1/5)",
+      "paperCode": "F432-005-2:2019-C01/KT(1/5)",
       "title": "KEPERLUAN LUKISAN ELEKTRIK SATU FASA",
-      "purpose": "Kertas Tugasan ini bertujuan untuk menilai kefahaman dan pengetahuan pelatih tentang lukisan bentangan, lukisan skematik, pengiraan beban yang digunakan, alat perlindungan serta akta dan peraturan elektrik berkaitan.",
+      "purpose": "Kertas Tugasan ini bertujuan untuk memantapkan kefahaman dan pengetahuan kepada pelatih tentang lukisan bentangan, lukisan skematik, pengiraan beban yang digunakan dan alat perlindungan dan akta serta peraturan – peraturan elektrik yang berkaitan.",
       "instructions": [
         "Jawab semua soalan di bawah dengan jelas, tepat dan mengikut piawaian MS IEC 60364 serta Peraturan-Peraturan Elektrik 1994.",
         "Setiap soalan akan disemak dan dinilai secara automatik oleh Pegawai Penilai AI berdasarkan skema rasmi Kertas Penerangan.",
@@ -2173,37 +2191,760 @@
         {
           "id": "tug-c01-1-q1",
           "numberLabel": "1.",
-          "prompt": "Apakah yang dimaksudkan dengan faktor kepelbagaian?",
-          "maxMarks": 4,
-          "rubricHint": "Nisbah atau kelonggaran pengiraan beban di mana tidak semua beban elektrik digunakan serentak pada satu masa; digunakan untuk mengira Kehendak Maksimum (MD)."
+          "questionType": "mcq",
+          "prompt": "Apakah jenis garisan bagi lukisan teknik?",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "Garisan berantai tebal dan garisan berantai nipis."
+            },
+            {
+              "key": "B",
+              "label": "Garisan berterusan nipis dan garisan bersiku – siku."
+            },
+            {
+              "key": "C",
+              "label": "Garisan berterusan tidak lurus dan garisan berterusan tebal."
+            },
+            {
+              "key": "D",
+              "label": "Garisan berterusan tebal dan nipis, dan garisan putus – putus tebal."
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: A (Jadual 1 KP(1/5) menyenaraikan garisan berantai tebal dan garisan berantai nipis sebagai jenis garisan lukisan teknik).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 2,
+              "x": 442,
+              "y": 492
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 2,
+                "x": 93,
+                "y": 575
+              },
+              "B": {
+                "page": 2,
+                "x": 93,
+                "y": 554
+              },
+              "C": {
+                "page": 2,
+                "x": 93,
+                "y": 534
+              },
+              "D": {
+                "page": 2,
+                "x": 93,
+                "y": 513
+              }
+            }
+          }
         },
         {
           "id": "tug-c01-1-q2",
           "numberLabel": "2.",
-          "prompt": "Senaraikan tiga (3) jenis gred pensel dan kegunaannya.",
-          "maxMarks": 6,
-          "rubricHint": "Contoh: Gred Keras (2H–4H) untuk garisan binaan/lakaran halus; Gred Sederhana (HB/F) untuk garisan objek & tulisan; Gred Lembut (B–2B) untuk garisan tebal/sempadan/bayangan."
+          "questionType": "mcq",
+          "prompt": "Apakah definisi Pihak Berkuasa Bekalan menurut Akta Bekalan Elektrik 1990?",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "Orang yang pada masa ini ditugaskan menjaga sesuatu pepasangan."
+            },
+            {
+              "key": "B",
+              "label": "Pegawai yang dilantik di bawah Seksyen 3, Akta Bekalan Elektrik 1990."
+            },
+            {
+              "key": "C",
+              "label": "Orang yang memegang suatu perakuan kekompetenan yang dikeluarkan oleh Ketua Pengarah."
+            },
+            {
+              "key": "D",
+              "label": "Mana – mana Pihak Berkuasa Berkanun yang ditubuhkan oleh Akta Parlimen untuk menjanakuasakan dan / atau membekalkan tenaga elektrik."
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: D.",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 2,
+              "x": 442,
+              "y": 285
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 2,
+                "x": 93,
+                "y": 409
+              },
+              "B": {
+                "page": 2,
+                "x": 93,
+                "y": 389
+              },
+              "C": {
+                "page": 2,
+                "x": 93,
+                "y": 368
+              },
+              "D": {
+                "page": 2,
+                "x": 93,
+                "y": 327
+              }
+            }
+          }
         },
         {
           "id": "tug-c01-1-q3",
           "numberLabel": "3.",
-          "prompt": "Apakah tujuan pengiraan beban yang tersambung dilakukan?",
-          "maxMarks": 4,
-          "rubricHint": "Menentukan jumlah arus/kuasa sebenar pemasangan bagi memilih saiz kabel, kadaran suis utama, MCB/RCCB dan keupayaan bekalan yang selamat dan tepat."
+          "questionType": "mcq",
+          "prompt": "Apakah peralatan yang digunakan untuk membuat lukisan teknik?",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "Sesiku L"
+            },
+            {
+              "key": "B",
+              "label": "Kertas Grid"
+            },
+            {
+              "key": "C",
+              "label": "Papan Lukisan"
+            },
+            {
+              "key": "D",
+              "label": "Keluli Tolok Berat"
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: C (Papan Lukisan).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 2,
+              "x": 442,
+              "y": 120
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 2,
+                "x": 93,
+                "y": 202
+              },
+              "B": {
+                "page": 2,
+                "x": 93,
+                "y": 182
+              },
+              "C": {
+                "page": 2,
+                "x": 93,
+                "y": 161
+              },
+              "D": {
+                "page": 2,
+                "x": 93,
+                "y": 140
+              }
+            }
+          }
         },
         {
           "id": "tug-c01-1-q4",
           "numberLabel": "4.",
-          "prompt": "Berikan tiga (3) jenis peralatan yang digunakan untuk membuat lukisan.",
-          "maxMarks": 3,
-          "rubricHint": "Contoh: Papan lukisan, sesiku T, sesiku segitiga (30°/60°/45°), jangka lukis, pembaris skala, pensel teknikal, pemadam, templat simbol elektrik."
+          "questionType": "mcq",
+          "prompt": "Apakah faktor yang mempengaruhi pemilihan jenis sistem pendawaian?",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "Jenis tanah."
+            },
+            {
+              "key": "B",
+              "label": "Suhu ambien."
+            },
+            {
+              "key": "C",
+              "label": "Keadaan pemasangan."
+            },
+            {
+              "key": "D",
+              "label": "Jenis pembinaan bangunan."
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan utama: D (Jenis pembinaan bangunan — item pertama §1.5 KP(1/5); nota §1.5 turut menyenaraikan suhu ambien dan keadaan pemasangan sebagai faktor berkaitan, namun Jenis pembinaan bangunan ialah pilihan utama).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 3,
+              "x": 442,
+              "y": 630
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 3,
+                "x": 93,
+                "y": 713
+              },
+              "B": {
+                "page": 3,
+                "x": 93,
+                "y": 692
+              },
+              "C": {
+                "page": 3,
+                "x": 93,
+                "y": 672
+              },
+              "D": {
+                "page": 3,
+                "x": 93,
+                "y": 651
+              }
+            }
+          }
         },
         {
           "id": "tug-c01-1-q5",
           "numberLabel": "5.",
-          "prompt": "Nyatakan lima (5) jenis peralatan perlindungan diri (PPE) semasa melakukan pendawaian.",
+          "questionType": "mcq",
+          "prompt": "Apakah definisi stok bagi pengurusan stor?",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "Barang – barang belum guna atau perlu disimpan atau untuk digunakan terus bagi tujuan operasi atau penyelenggaraan."
+            },
+            {
+              "key": "B",
+              "label": "Barang – barang belum guna atau perlu dibuang atau untuk digunakan terus bagi tujuan operasi atau penyelenggaraan."
+            },
+            {
+              "key": "C",
+              "label": "Barang – barang telah guna atau perlu disimpan atau untuk digunakan terus bagi tujuan operasi atau penyelenggaraan."
+            },
+            {
+              "key": "D",
+              "label": "Barang – barang telah guna atau perlu dibuang atau untuk digunakan terus bagi tujuan operasi atau penyelenggaraan."
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: A.",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 3,
+              "x": 442,
+              "y": 382
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 3,
+                "x": 93,
+                "y": 548
+              },
+              "B": {
+                "page": 3,
+                "x": 93,
+                "y": 506
+              },
+              "C": {
+                "page": 3,
+                "x": 93,
+                "y": 465
+              },
+              "D": {
+                "page": 3,
+                "x": 93,
+                "y": 423
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-1-q6",
+          "numberLabel": "6.",
+          "questionType": "mcq",
+          "prompt": "Apakah peralatan pelindung diri yang perlu digunakan untuk melindungi mata semasa melakukan kerja?",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "Pelindung mata"
+            },
+            {
+              "key": "B",
+              "label": "Topi keselamatan"
+            },
+            {
+              "key": "C",
+              "label": "Kasut keselamatan"
+            },
+            {
+              "key": "D",
+              "label": "Pelindung pernafasan"
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: A (Pelindung mata).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 3,
+              "x": 442,
+              "y": 175
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 3,
+                "x": 93,
+                "y": 278
+              },
+              "B": {
+                "page": 3,
+                "x": 93,
+                "y": 258
+              },
+              "C": {
+                "page": 3,
+                "x": 93,
+                "y": 237
+              },
+              "D": {
+                "page": 3,
+                "x": 93,
+                "y": 216
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-1-q7",
+          "numberLabel": "7.",
+          "questionType": "mcq",
+          "prompt": "Antara berikut yang manakah ialah ciri – ciri pengalir atau kabel yang digunakan dalam pepasangan?",
+          "mcqStatements": [
+            "I. Lokasi semula jadi.",
+            "II. Voltan susut yang dibenarkan.",
+            "III. Suhu maksimum yang dibenarkan.",
+            "IV. Galangan maksimum ketika kefungsian litar perlindungan litar pintas."
+          ],
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "I, II dan III"
+            },
+            {
+              "key": "B",
+              "label": "I, II dan IV"
+            },
+            {
+              "key": "C",
+              "label": "I, III dan IV"
+            },
+            {
+              "key": "D",
+              "label": "II, III dan IV"
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: D (II, III dan IV berdasarkan Klausa 132.6).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 4,
+              "x": 442,
+              "y": 506
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 4,
+                "x": 93,
+                "y": 589
+              },
+              "B": {
+                "page": 4,
+                "x": 93,
+                "y": 568
+              },
+              "C": {
+                "page": 4,
+                "x": 93,
+                "y": 548
+              },
+              "D": {
+                "page": 4,
+                "x": 93,
+                "y": 527
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-1-q8",
+          "numberLabel": "8.",
+          "questionType": "mcq",
+          "prompt": "Pilih faktor yang perlu dititikberatkan semasa memilih peralatan kelengkapan elektrik.",
+          "mcqStatements": [
+            "I. Arus",
+            "II. Voltan",
+            "III. Keserasian.",
+            "IV. Jenis bangunan."
+          ],
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "I, II dan III"
+            },
+            {
+              "key": "B",
+              "label": "I, II dan IV"
+            },
+            {
+              "key": "C",
+              "label": "I, III dan IV"
+            },
+            {
+              "key": "D",
+              "label": "II, III dan IV"
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: A (I, II dan III — Arus, Voltan, Keserasian).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 4,
+              "x": 442,
+              "y": 216
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 4,
+                "x": 93,
+                "y": 299
+              },
+              "B": {
+                "page": 4,
+                "x": 93,
+                "y": 278
+              },
+              "C": {
+                "page": 4,
+                "x": 93,
+                "y": 258
+              },
+              "D": {
+                "page": 4,
+                "x": 93,
+                "y": 237
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-1-q9",
+          "numberLabel": "9.",
+          "questionType": "mcq",
+          "prompt": "Apakah keperluan yang perlu diketahui oleh pendawai atau kontraktor mengenai keperluan lawatan tapak?",
+          "mcqStatements": [
+            "I. Jenis pendawaian.",
+            "II. Membuat lawatan tapak.",
+            "III. Mengira permintaan beban tertinggi.",
+            "IV. Mengenal pasti keperluan pelanggan."
+          ],
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "I, II dan III"
+            },
+            {
+              "key": "B",
+              "label": "I, II dan IV"
+            },
+            {
+              "key": "C",
+              "label": "I, III dan IV"
+            },
+            {
+              "key": "D",
+              "label": "II, III dan IV"
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: C (I, III dan IV).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 5,
+              "x": 442,
+              "y": 506
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 5,
+                "x": 93,
+                "y": 589
+              },
+              "B": {
+                "page": 5,
+                "x": 93,
+                "y": 568
+              },
+              "C": {
+                "page": 5,
+                "x": 93,
+                "y": 548
+              },
+              "D": {
+                "page": 5,
+                "x": 93,
+                "y": 527
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-1-q10",
+          "numberLabel": "10.",
+          "questionType": "mcq",
+          "prompt": "Antara berikut yang manakah langkah – langkah yang perlu dipatuhi sekiranya ada pindaan atau pemadaman pada rekod yang tidak dibenarkan?",
+          "mcqStatements": [
+            "I. Pembetulan ditandatangani ringkas oleh Pegawai Stor.",
+            "II. Menyenggara rekod - rekod bagi setiap transaksi keluar.",
+            "III. Angka yang betul perlu ditulis di bahagian atas angka asal.",
+            "IV. Angka asal hendaklah digariskan dengan satu garisan sahaja."
+          ],
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "I, II dan III"
+            },
+            {
+              "key": "B",
+              "label": "I, II dan IV"
+            },
+            {
+              "key": "C",
+              "label": "I, III dan IV"
+            },
+            {
+              "key": "D",
+              "label": "II, III dan IV"
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: C (I, III dan IV).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 5,
+              "x": 442,
+              "y": 216
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 5,
+                "x": 93,
+                "y": 299
+              },
+              "B": {
+                "page": 5,
+                "x": 93,
+                "y": 278
+              },
+              "C": {
+                "page": 5,
+                "x": 93,
+                "y": 258
+              },
+              "D": {
+                "page": 5,
+                "x": 93,
+                "y": 237
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-1-q11",
+          "numberLabel": "11.",
+          "questionType": "diagram_label",
+          "prompt": "Tuliskan jawapan yang betul diruang yang telah disediakan.",
+          "diagramImageUrl": "/assets/tugasan/kt1_p6_0_1181x1181.png",
+          "diagramCaption": "Rajah Peralatan Perlindungan Diri (PPE)",
+          "diagramCallouts": [
+            {
+              "key": "a",
+              "topPercent": 6,
+              "leftPercent": 5
+            },
+            {
+              "key": "b",
+              "topPercent": 4,
+              "leftPercent": 83
+            },
+            {
+              "key": "c",
+              "topPercent": 52,
+              "leftPercent": 5
+            },
+            {
+              "key": "d",
+              "topPercent": 50,
+              "leftPercent": 86
+            },
+            {
+              "key": "e",
+              "topPercent": 74,
+              "leftPercent": 5
+            }
+          ],
           "maxMarks": 5,
-          "rubricHint": "Topi keselamatan (safety helmet), kasut keselamatan berpenebat, sarung tangan berpenebat, cermin mata keselamatan (safety goggles), jaket keselamatan/pakaian kerja sesuai."
+          "rubricHint": "1 markah setiap label betul (jumlah 5 markah): a) Pelindung mata / Gogal keselamatan / Cermin mata keselamatan, b) Topi keselamatan / Pelindung kepala, c) Sarung tangan keselamatan / Berpenebat, d) Vest keselamatan / Jaket keselamatan, e) Kasut keselamatan.",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 6,
+              "x": 442,
+              "y": 133
+            },
+            "answerSlots": [
+              {
+                "key": "a",
+                "page": 6,
+                "x": 138,
+                "y": 237,
+                "maxWidth": 265
+              },
+              {
+                "key": "b",
+                "page": 6,
+                "x": 138,
+                "y": 216,
+                "maxWidth": 265
+              },
+              {
+                "key": "c",
+                "page": 6,
+                "x": 138,
+                "y": 196,
+                "maxWidth": 265
+              },
+              {
+                "key": "d",
+                "page": 6,
+                "x": 138,
+                "y": 175,
+                "maxWidth": 265
+              },
+              {
+                "key": "e",
+                "page": 6,
+                "x": 138,
+                "y": 154,
+                "maxWidth": 265
+              }
+            ]
+          }
+        },
+        {
+          "id": "tug-c01-1-q12",
+          "numberLabel": "12.",
+          "questionType": "matching",
+          "prompt": "Padankan peraturan dan kenyataan yang betul.",
+          "matchingLeftHeader": "Peraturan",
+          "matchingRightHeader": "Kenyataan",
+          "matchingRows": [
+            {
+              "leftText": "Peraturan Elektrik 1994",
+              "rightText": "Pematuhan Akta Keselamatan & Kesihatan Pekerjaan 1994 (Akta 514) perenggan 24(1)(c) – Pekerja perlu memakai pakaian peralatan perlindungan diri ( PPE ) sepanjang masa untuk mencegah sebarang risiko kepada keselamatan & kesihatan."
+            },
+            {
+              "leftText": "Pemilihan Kelengkapan Elektrik",
+              "rightText": "Menerangkan mengenai keperluan pengiraan permintaan maksimum beban dalam Ampere bagi setiap litar akhir suatu pendawaian."
+            },
+            {
+              "leftText": "Peralatan Perlindungan Diri ( PPE )",
+              "rightText": "Menyatakan bagi sesuatu pepasangan di tempat hiburan awam, perlindungan terhadap arus kebocoran bumi hendaklah menggunakan PAB ( RCD ) berkepekaan tidak melebihi 10 miliampere ."
+            },
+            {
+              "leftText": "Klausa 311 Permintaan Beban Tertinggi ( MD )",
+              "rightText": "Klausa 133 Setiap item kelengkapan elektrik yang digunakan dalam pepasangan elektrik hendaklah mematuhi standard MS IEC yang telah ditetapkan."
+            },
+            {
+              "leftText": "Peraturan 36 (1) Peraturan – Peraturan Elektrik 1994",
+              "rightText": "Peruntukan bagi pengawalseliaan industri pembekalan elektrik, pembekalan elektrik pada harga yang munasabah, pelesenan mana – mana pepasangan elektrik, pengawalan mana – mana pepasangan, loji dan kelengkapan elektrik berkenaan dengan perkara yang berhubung dengan keselamatan orang dan penggunaan elektrik dengan cekap dan bagi maksud yang berkaitan dengannya."
+            }
+          ],
+          "maxMarks": 5,
+          "rubricHint": "1 markah setiap padanan betul (jumlah 5 markah): Peraturan Elektrik 1994 -> Peruntukan bagi pengawalseliaan industri pembekalan elektrik...; Pemilihan Kelengkapan Elektrik -> Klausa 133 Setiap item kelengkapan elektrik...; Peralatan Perlindungan Diri ( PPE ) -> Pematuhan Akta Keselamatan & Kesihatan Pekerjaan 1994...; Klausa 311 Permintaan Beban Tertinggi ( MD ) -> Menerangkan mengenai keperluan pengiraan permintaan maksimum beban...; Peraturan 36 (1) Peraturan – Peraturan Elektrik 1994 -> Menyatakan bagi sesuatu pepasangan di tempat hiburan awam... 10 miliampere.",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 7,
+              "x": 442,
+              "y": 69
+            },
+            "matchingLeftPoints": [
+              {
+                "rowIdx": 0,
+                "page": 7,
+                "x": 223,
+                "y": 606
+              },
+              {
+                "rowIdx": 1,
+                "page": 7,
+                "x": 223,
+                "y": 507
+              },
+              {
+                "rowIdx": 2,
+                "page": 7,
+                "x": 223,
+                "y": 423
+              },
+              {
+                "rowIdx": 3,
+                "page": 7,
+                "x": 223,
+                "y": 330
+              },
+              {
+                "rowIdx": 4,
+                "page": 7,
+                "x": 223,
+                "y": 195
+              }
+            ],
+            "matchingRightPoints": [
+              {
+                "rowIdx": 0,
+                "page": 7,
+                "x": 281,
+                "y": 606
+              },
+              {
+                "rowIdx": 1,
+                "page": 7,
+                "x": 281,
+                "y": 507
+              },
+              {
+                "rowIdx": 2,
+                "page": 7,
+                "x": 281,
+                "y": 423
+              },
+              {
+                "rowIdx": 3,
+                "page": 7,
+                "x": 281,
+                "y": 330
+              },
+              {
+                "rowIdx": 4,
+                "page": 7,
+                "x": 281,
+                "y": 195
+              }
+            ]
+          }
         }
       ],
       "references": [
@@ -2213,24 +2954,78 @@
         "Kementerian Tenaga, Air dan Komunikasi Malaysia. (2008). Buku Panduan Cekap Tenaga. ISBN 9789833474189."
       ],
       "sourceEbookId": "ebook-kpc01-1",
-      "updatedAt": "2026-01-01T00:00:00.000Z"
+      "updatedAt": "2026-01-01T00:00:00.000Z",
+      "sourcePdfUrl": "/assets/aistudio/10._KTC01_1-5__PINK__dae3de14.pdf",
+      "pdfOverlayMeta": {
+        "namePos": {
+          "page": 1,
+          "x": 58,
+          "y": 252
+        },
+        "icPos": {
+          "page": 1,
+          "x": 226,
+          "y": 252
+        },
+        "datePos": {
+          "page": 1,
+          "x": 428,
+          "y": 252
+        },
+        "userIdPos": {
+          "page": 1,
+          "x": 428,
+          "y": 239
+        },
+        "totalMarkPos": {
+          "page": 8,
+          "x": 468,
+          "y": 715
+        },
+        "statusPos": {
+          "page": 8,
+          "x": 312,
+          "y": 715
+        },
+        "stampBox": {
+          "page": 8,
+          "x": 300,
+          "y": 588,
+          "w": 227,
+          "h": 97
+        },
+        "headerLogoBox": {
+          "page": 1,
+          "x": 54,
+          "y": 631,
+          "w": 162,
+          "h": 141
+        },
+        "headerAddrBox": {
+          "page": 1,
+          "x": 222,
+          "y": 696,
+          "w": 320,
+          "h": 76
+        }
+      }
     },
     {
       "id": "tug-c01-2",
       "cuId": "cu-201",
-      "setCode": "T(2/5)",
+      "setCode": "KT(2/5)",
       "programCodeTitle": "F432-005-2:2019 SINGLE PHASE ELECTRICAL INSTALLATION AND MAINTENANCE",
       "tahap": "2",
-      "cuCodeTitle": "F432-005-2:2019 - C01 SINGLE PHASE DRAWING",
+      "cuCodeTitle": "F432-005-2:2019 -C01 SINGLE PHASE DRAWING",
       "workActivities": [
         "1. PREPARE SINGLE PHASE DRAWING REQUIREMENTS.",
         "2. PERFORM SINGLE PHASE DRAWING.",
         "3. CALCULATE MATERIALS REQUIREMENT.",
         "4. PROPOSE SINGLE PHASE DRAWING PAPERWORK."
       ],
-      "paperCode": "F432-005-2:2019-C01/T(2/5)",
+      "paperCode": "F432-005-2:2019-C01/KT(2/5)",
       "title": "LUKISAN SUSUN ATUR ELEKTRIK SATU FASA",
-      "purpose": "Kertas Tugasan ini bertujuan untuk menilai kefahaman dan pengetahuan pelatih tentang prosedur menyediakan lukisan susun atur elektrik satu fasa berdasarkan keperluan piawaian dan pengiraan faktor kepelbagaian.",
+      "purpose": "Kertas Tugasan ini bertujuan untuk memantapkan kefahaman dan pengetahuan kepada pelatih tentang lukisan bentangan, lukisan skematik, pengiraan beban yang digunakan dan alat perlindungan dan akta serta peraturan – peraturan elektrik berkaitan.",
       "instructions": [
         "Jawab semua soalan di bawah dengan jelas, tepat dan mengikut piawaian MS IEC 60364 serta Peraturan-Peraturan Elektrik 1994.",
         "Setiap soalan akan disemak dan dinilai secara automatik oleh Pegawai Penilai AI berdasarkan skema rasmi Kertas Penerangan.",
@@ -2241,37 +3036,767 @@
         {
           "id": "tug-c01-2-q1",
           "numberLabel": "1.",
-          "prompt": "Apakah yang dimaksudkan dengan lukisan elektrik?",
-          "maxMarks": 4,
-          "rubricHint": "Lukisan teknikal yang menggunakan simbol piawai untuk menggambarkan susun atur, sambungan litar, lokasi kelengkapan elektrik dan sistem pendawaian dalam bangunan."
+          "questionType": "mcq",
+          "prompt": "Apakah fungsi lukisan susun atur satu fasa?",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "Memilih jenis kabel."
+            },
+            {
+              "key": "B",
+              "label": "Membuat pengujian litar."
+            },
+            {
+              "key": "C",
+              "label": "Membuat kerja – kerja pemasangan litar elektrik."
+            },
+            {
+              "key": "D",
+              "label": "Menempatkan kedudukan aksesori elektrik yang akan digunakan."
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: D (Menempatkan kedudukan aksesori elektrik yang akan digunakan).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 2,
+              "x": 442,
+              "y": 493
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 2,
+                "x": 107,
+                "y": 577
+              },
+              "B": {
+                "page": 2,
+                "x": 107,
+                "y": 556
+              },
+              "C": {
+                "page": 2,
+                "x": 107,
+                "y": 535
+              },
+              "D": {
+                "page": 2,
+                "x": 107,
+                "y": 514
+              }
+            }
+          }
         },
         {
           "id": "tug-c01-2-q2",
           "numberLabel": "2.",
-          "prompt": "Senaraikan enam (6) jenis struktur bangunan.",
-          "maxMarks": 6,
-          "rubricHint": "Contoh: Rumah kediaman/banglo, rumah teres, pangsapuri/kondominium, bangunan pejabat, kilang/bengkel industri, kedai/premis komersial, sekolah/hospital."
+          "questionType": "mcq",
+          "prompt": "Apakah simbol bagi kipas dinding yang terdapat di dalam simbol piawai?",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "Simbol A",
+              "symbolId": "wall_fan_a"
+            },
+            {
+              "key": "B",
+              "label": "Simbol B",
+              "symbolId": "wall_fan_b"
+            },
+            {
+              "key": "C",
+              "label": "Simbol C",
+              "symbolId": "wall_fan_c"
+            },
+            {
+              "key": "D",
+              "label": "Simbol D",
+              "symbolId": "wall_fan_d"
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: B (simbol piawai kipas dinding ialah bilah kipas bergaris luar dengan pendakap dinding; simbol berpanah ialah kipas ekzos). Terima juga A jika huraian merujuk variasi pendakap dinding.",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 2,
+              "x": 442,
+              "y": 327
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 2,
+                "x": 107,
+                "y": 410
+              },
+              "B": {
+                "page": 2,
+                "x": 107,
+                "y": 389
+              },
+              "C": {
+                "page": 2,
+                "x": 107,
+                "y": 368
+              },
+              "D": {
+                "page": 2,
+                "x": 107,
+                "y": 347
+              }
+            }
+          }
         },
         {
           "id": "tug-c01-2-q3",
           "numberLabel": "3.",
-          "prompt": "Apakah yang dimaksudkan dengan pencahayaan?",
-          "maxMarks": 4,
-          "rubricHint": "Penggunaan cahaya sama ada semula jadi atau buatan (lampu elektrik) untuk menerangi ruang bagi tujuan penglihatan, keselamatan dan keselesaan."
+          "questionType": "mcq",
+          "prompt": "Apakah yang dimaksudkan dengan faktor kepelbagaian?",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "Suatu kiraan tepat untuk menentukan penggunaan jenis kabel."
+            },
+            {
+              "key": "B",
+              "label": "Suatu kiraan anggaran untuk menentukan penggunaan jenis kabel."
+            },
+            {
+              "key": "C",
+              "label": "Suatu kiraan tepat yang membenarkan pengurangan arus bagi alat saiz pengalir kabel, pengasingan dan alat perlindungan."
+            },
+            {
+              "key": "D",
+              "label": "Suatu kiraan anggaran yang membenarkan pengurangan arus bagi saiz alat pengalir kabel, pengasingan dan alat perlindungan."
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: D.",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 2,
+              "x": 442,
+              "y": 98
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 2,
+                "x": 107,
+                "y": 222
+              },
+              "B": {
+                "page": 2,
+                "x": 107,
+                "y": 202
+              },
+              "C": {
+                "page": 2,
+                "x": 107,
+                "y": 181
+              },
+              "D": {
+                "page": 2,
+                "x": 107,
+                "y": 139
+              }
+            }
+          }
         },
         {
           "id": "tug-c01-2-q4",
           "numberLabel": "4.",
-          "prompt": "Berikan tiga (3) kategori pepasangan pendawaian elektrik.",
-          "maxMarks": 3,
-          "rubricHint": "Contoh: Pepasangan domestik/kediaman, pepasangan komersial, pepasangan industri (atau mengikut jenis sistem seperti permukaan, tersembunyi, pembuluh/salur)."
+          "questionType": "mcq",
+          "prompt": "Berdasarkan Rajah 1, apakah jenis lukisan elektrik di atas?",
+          "diagramImageUrl": "/assets/tugasan/kt2_p3_0_395x336.png",
+          "diagramCaption": "Rajah 1 : Lukisan elektrik",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "Lukisan Blok."
+            },
+            {
+              "key": "B",
+              "label": "Lukisan Skematik."
+            },
+            {
+              "key": "C",
+              "label": "Lukisan Susun Atur."
+            },
+            {
+              "key": "D",
+              "label": "Lukisan Pendawaian."
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: D (Lukisan Pendawaian).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 3,
+              "x": 442,
+              "y": 382
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 3,
+                "x": 108,
+                "y": 465
+              },
+              "B": {
+                "page": 3,
+                "x": 108,
+                "y": 445
+              },
+              "C": {
+                "page": 3,
+                "x": 108,
+                "y": 424
+              },
+              "D": {
+                "page": 3,
+                "x": 108,
+                "y": 403
+              }
+            }
+          }
         },
         {
           "id": "tug-c01-2-q5",
           "numberLabel": "5.",
-          "prompt": "Apakah maksud faktor kepelbagaian?",
-          "maxMarks": 4,
-          "rubricHint": "Faktor pengurangan anggaran beban tersambung kepada kehendak maksimum kerana tidak semua alat elektrik beroperasi pada kapasiti penuh secara serentak."
+          "questionType": "mcq",
+          "prompt": "Pilih simbol elektrik dan nama yang betul.",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "Lampu glob [Globe lights]",
+              "imageUrl": "/assets/tugasan/kt2_p3_1_43x46.png"
+            },
+            {
+              "key": "B",
+              "label": "Lampu filamen [Filament lamp]",
+              "imageUrl": "/assets/tugasan/kt2_p3_2_50x47.png"
+            },
+            {
+              "key": "C",
+              "label": "Lampu dinding [Wall lamp]",
+              "imageUrl": "/assets/tugasan/kt2_p3_3_53x50.png"
+            },
+            {
+              "key": "D",
+              "label": "Lampu pendarflour bulat [Round fluorescent lamp]",
+              "imageUrl": "/assets/tugasan/kt2_p3_4_66x44.png"
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: A (Lampu glob — simbol bulatan kosong O; B/D bersilang garis ialah simbol lampu lain manakala C ialah simbol lampu dinding bergantung jadual piawai). Beri 1 markah bagi A atau C mengikut padanan betul pada simbol yang dipaparkan.",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 3,
+              "x": 442,
+              "y": 91
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 3,
+                "x": 109,
+                "y": 322
+              },
+              "B": {
+                "page": 3,
+                "x": 109,
+                "y": 257
+              },
+              "C": {
+                "page": 3,
+                "x": 109,
+                "y": 195
+              },
+              "D": {
+                "page": 3,
+                "x": 109,
+                "y": 132
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-2-q6",
+          "numberLabel": "6.",
+          "questionType": "mcq",
+          "prompt": "Apakah reka bentuk dan skim pencahayaan yang baik?",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "Tidak sesuai dengan kehendak tugasnya."
+            },
+            {
+              "key": "B",
+              "label": "Tidak menyilaukan atau memberikan bayang."
+            },
+            {
+              "key": "C",
+              "label": "Cahaya tidak dapat disebarkan secara seimbang."
+            },
+            {
+              "key": "D",
+              "label": "Tidak dapat memberikan cahaya yang mencukupi."
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: B (Tidak menyilaukan atau memberikan bayang).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 4,
+              "x": 442,
+              "y": 632
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 4,
+                "x": 107,
+                "y": 716
+              },
+              "B": {
+                "page": 4,
+                "x": 107,
+                "y": 695
+              },
+              "C": {
+                "page": 4,
+                "x": 107,
+                "y": 674
+              },
+              "D": {
+                "page": 4,
+                "x": 107,
+                "y": 653
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-2-q7",
+          "numberLabel": "7.",
+          "questionType": "mcq",
+          "prompt": "Antara berikut yang manakah ialah skala yang digunakan untuk membuat lukisan elektrik ?",
+          "mcqStatements": [
+            "I. 1 : 50",
+            "II. 1 : 100",
+            "III. 1 : 500",
+            "IV. 1 : 1000"
+          ],
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "I, II dan III"
+            },
+            {
+              "key": "B",
+              "label": "I, II dan IV"
+            },
+            {
+              "key": "C",
+              "label": "I, III dan IV"
+            },
+            {
+              "key": "D",
+              "label": "II, III dan IV"
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: A (I, II dan III — skala 1:50, 1:100 dan 1:500).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 4,
+              "x": 442,
+              "y": 341
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 4,
+                "x": 100,
+                "y": 424
+              },
+              "B": {
+                "page": 4,
+                "x": 100,
+                "y": 403
+              },
+              "C": {
+                "page": 4,
+                "x": 100,
+                "y": 382
+              },
+              "D": {
+                "page": 4,
+                "x": 100,
+                "y": 362
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-2-q8",
+          "numberLabel": "8.",
+          "questionType": "mcq",
+          "prompt": "Pilih elemen yang berkaitan dengan keperluan pemasangan berpandukan pelan bangunan.",
+          "mcqStatements": [
+            "I. Cadangan beban.",
+            "II. Lokasi tapak yang sesuai.",
+            "III. Penempatan kelengkapan elektrik.",
+            "IV. Merancang reka letak lukisan susun atur elektrik."
+          ],
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "I, II dan III"
+            },
+            {
+              "key": "B",
+              "label": "I, II dan IV"
+            },
+            {
+              "key": "C",
+              "label": "I, III dan IV"
+            },
+            {
+              "key": "D",
+              "label": "II, III dan IV"
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: C (I, III dan IV).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 5,
+              "x": 442,
+              "y": 674
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 5,
+                "x": 100,
+                "y": 757
+              },
+              "B": {
+                "page": 5,
+                "x": 100,
+                "y": 736
+              },
+              "C": {
+                "page": 5,
+                "x": 100,
+                "y": 716
+              },
+              "D": {
+                "page": 5,
+                "x": 100,
+                "y": 695
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-2-q9",
+          "numberLabel": "9.",
+          "questionType": "mcq",
+          "prompt": "Apakah jenis – jenis lukisan elektrik?",
+          "mcqStatements": [
+            "I. Lukisan Arkitek.",
+            "II. Lukisan Skematik.",
+            "III. Lukisan Susun Atur.",
+            "IV. Lukisan Pendawaian."
+          ],
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "I, II dan III"
+            },
+            {
+              "key": "B",
+              "label": "I, II dan IV"
+            },
+            {
+              "key": "C",
+              "label": "I, III dan IV"
+            },
+            {
+              "key": "D",
+              "label": "II, III dan IV"
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: D (II, III dan IV).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 5,
+              "x": 442,
+              "y": 403
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 5,
+                "x": 100,
+                "y": 507
+              },
+              "B": {
+                "page": 5,
+                "x": 100,
+                "y": 487
+              },
+              "C": {
+                "page": 5,
+                "x": 100,
+                "y": 466
+              },
+              "D": {
+                "page": 5,
+                "x": 100,
+                "y": 445
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-2-q10",
+          "numberLabel": "10.",
+          "questionType": "mcq",
+          "prompt": "Apakah yang dimaksudkan dengan blueprint berdasarkan kamus oxford?",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "Satu cetak sentuh pada sebuah lukisan atau imej lain diberikan sebagai garisan putih pada satu latar biru."
+            },
+            {
+              "key": "B",
+              "label": "Satu cetak sesentuh pada sebuah lukisan atau imej sama diberikan sebagai garisan putih pada satu latar biru."
+            },
+            {
+              "key": "C",
+              "label": "Satu cetak sesentuh pada sebuah lukisan atau imej lain diberikan sebagai garisan putih pada satu latar biru."
+            },
+            {
+              "key": "D",
+              "label": "Satu cetak sesentuh pada sebuah lukisan atau imej lain diberikan sebagai garisan putih pada dua latar biru."
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: C.",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 5,
+              "x": 442,
+              "y": 133
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 5,
+                "x": 99,
+                "y": 320
+              },
+              "B": {
+                "page": 5,
+                "x": 99,
+                "y": 278
+              },
+              "C": {
+                "page": 5,
+                "x": 99,
+                "y": 237
+              },
+              "D": {
+                "page": 5,
+                "x": 99,
+                "y": 195
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-2-q11",
+          "numberLabel": "11.",
+          "questionType": "symbol_draw",
+          "prompt": "Lukiskan simbol yang betul diruang yang disediakan.",
+          "symbolRows": [
+            {
+              "bil": "1.",
+              "label": "Suis tarik",
+              "imageUrl": "/assets/tugasan/kt2_p6_0_140x169.png"
+            },
+            {
+              "bil": "2.",
+              "label": "Suis satu hala",
+              "imageUrl": "/assets/tugasan/kt2_p6_1_339x167.png"
+            },
+            {
+              "bil": "3.",
+              "label": "Lampu Pendarflour Dinding",
+              "imageUrl": "/assets/tugasan/kt2_p6_2_385x124.png"
+            },
+            {
+              "bil": "4.",
+              "label": "Alat atur kipas",
+              "imageUrl": "/assets/tugasan/kt2_p6_3_134x187.png"
+            },
+            {
+              "bil": "5.",
+              "label": "Lampu Pendarflour Bulat",
+              "imageUrl": "/assets/tugasan/kt2_p6_4_91x73.png"
+            }
+          ],
+          "maxMarks": 5,
+          "rubricHint": "1 markah setiap simbol piawai yang tepat (jumlah 5 markah): 1. Suis tarik -> simbol suis_tarik; 2. Suis satu hala -> simbol suis_satu_hala; 3. Lampu Pendarflour Dinding -> simbol lampu_pendarflour_dinding; 4. Alat atur kipas -> simbol alat_atur_kipas; 5. Lampu Pendarflour Bulat -> simbol lampu_pendarflour_bulat.",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 6,
+              "x": 442,
+              "y": 172
+            },
+            "symbolCells": [
+              {
+                "rowIdx": 0,
+                "page": 6,
+                "x": 331,
+                "y": 598,
+                "w": 181,
+                "h": 105
+              },
+              {
+                "rowIdx": 1,
+                "page": 6,
+                "x": 331,
+                "y": 497,
+                "w": 181,
+                "h": 101
+              },
+              {
+                "rowIdx": 2,
+                "page": 6,
+                "x": 331,
+                "y": 410,
+                "w": 181,
+                "h": 87
+              },
+              {
+                "rowIdx": 3,
+                "page": 6,
+                "x": 331,
+                "y": 315,
+                "w": 181,
+                "h": 94
+              },
+              {
+                "rowIdx": 4,
+                "page": 6,
+                "x": 331,
+                "y": 205,
+                "w": 181,
+                "h": 110
+              }
+            ]
+          }
+        },
+        {
+          "id": "tug-c01-2-q12",
+          "numberLabel": "12.",
+          "questionType": "matching",
+          "prompt": "Padankan gambar di bawah dengan nama yang betul.",
+          "matchingLeftHeader": "Nama Lukisan",
+          "matchingRightHeader": "Gambar Rajah Lukisan",
+          "matchingRows": [
+            {
+              "leftText": "Lukisan Pendawaian Elektrik",
+              "rightImageUrl": "/assets/tugasan/kt2_p7_0_713x340.png"
+            },
+            {
+              "leftText": "Lukisan Susun Atur Satu Fasa",
+              "rightImageUrl": "/assets/tugasan/kt2_p7_1_352x304.png"
+            },
+            {
+              "leftText": "Lukisan Tapak / Lokasi",
+              "rightImageUrl": "/assets/tugasan/kt2_p7_2_214x295.png"
+            },
+            {
+              "leftText": "Pelan Bangunan",
+              "rightImageUrl": "/assets/tugasan/kt2_p7_3_427x189.png"
+            },
+            {
+              "leftText": "Lukisan Skematik Satu Fasa",
+              "rightImageUrl": "/assets/tugasan/kt2_p7_4_425x285.png"
+            }
+          ],
+          "maxMarks": 5,
+          "rubricHint": "1 markah setiap padanan betul (jumlah 5 markah): Gambar 1 (skematik DB/MCB/PAB) -> Lukisan Skematik Satu Fasa; Gambar 2 (pelan lantai rumah berdimensi tanpa aksesori elektrik) -> Pelan Bangunan; Gambar 3 (pendawaian suis, MCB dan lampu) -> Lukisan Pendawaian Elektrik; Gambar 4 (peta jalan dan lot tapak) -> Lukisan Tapak / Lokasi; Gambar 5 (pelan bangunan lengkap simbol suis, soket, kipas dan lampu) -> Lukisan Susun Atur Satu Fasa.",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 7,
+              "x": 442,
+              "y": 57
+            },
+            "matchingLeftPoints": [
+              {
+                "rowIdx": 0,
+                "page": 7,
+                "x": 214,
+                "y": 652
+              },
+              {
+                "rowIdx": 1,
+                "page": 7,
+                "x": 214,
+                "y": 522
+              },
+              {
+                "rowIdx": 2,
+                "page": 7,
+                "x": 214,
+                "y": 390
+              },
+              {
+                "rowIdx": 3,
+                "page": 7,
+                "x": 214,
+                "y": 252
+              },
+              {
+                "rowIdx": 4,
+                "page": 7,
+                "x": 214,
+                "y": 126
+              }
+            ],
+            "matchingRightPoints": [
+              {
+                "rowIdx": 0,
+                "page": 7,
+                "x": 268,
+                "y": 652
+              },
+              {
+                "rowIdx": 1,
+                "page": 7,
+                "x": 268,
+                "y": 522
+              },
+              {
+                "rowIdx": 2,
+                "page": 7,
+                "x": 268,
+                "y": 390
+              },
+              {
+                "rowIdx": 3,
+                "page": 7,
+                "x": 268,
+                "y": 252
+              },
+              {
+                "rowIdx": 4,
+                "page": 7,
+                "x": 268,
+                "y": 126
+              }
+            ]
+          }
         }
       ],
       "references": [
@@ -2281,7 +3806,61 @@
         "Kementerian Tenaga, Air dan Komunikasi Malaysia. (2008). Buku Panduan Cekap Tenaga. ISBN 9789833474189."
       ],
       "sourceEbookId": "ebook-kpc01-2",
-      "updatedAt": "2026-01-01T00:00:00.000Z"
+      "updatedAt": "2026-01-01T00:00:00.000Z",
+      "sourcePdfUrl": "/assets/aistudio/13._KTC01_2-5__PINK__bab27e28.pdf",
+      "pdfOverlayMeta": {
+        "namePos": {
+          "page": 1,
+          "x": 74,
+          "y": 251
+        },
+        "icPos": {
+          "page": 1,
+          "x": 243,
+          "y": 251
+        },
+        "datePos": {
+          "page": 1,
+          "x": 444,
+          "y": 251
+        },
+        "userIdPos": {
+          "page": 1,
+          "x": 444,
+          "y": 238
+        },
+        "totalMarkPos": {
+          "page": 8,
+          "x": 465,
+          "y": 669
+        },
+        "statusPos": {
+          "page": 8,
+          "x": 310,
+          "y": 669
+        },
+        "stampBox": {
+          "page": 8,
+          "x": 299,
+          "y": 542,
+          "w": 222,
+          "h": 97
+        },
+        "headerLogoBox": {
+          "page": 1,
+          "x": 75,
+          "y": 620,
+          "w": 162,
+          "h": 135
+        },
+        "headerAddrBox": {
+          "page": 1,
+          "x": 244,
+          "y": 682,
+          "w": 292,
+          "h": 74
+        }
+      }
     },
     {
       "id": "tug-c01-3",
@@ -2289,7 +3868,7 @@
       "setCode": "T(3/5)",
       "programCodeTitle": "F432-005-2:2019 SINGLE PHASE ELECTRICAL INSTALLATION AND MAINTENANCE",
       "tahap": "2",
-      "cuCodeTitle": "F432-005-2:2019 - C01 SINGLE PHASE DRAWING",
+      "cuCodeTitle": "F432-005-2:2019-C01 SINGLE PHASE DRAWING",
       "workActivities": [
         "1. PREPARE SINGLE PHASE DRAWING REQUIREMENTS.",
         "2. PERFORM SINGLE PHASE DRAWING.",
@@ -2298,7 +3877,7 @@
       ],
       "paperCode": "F432-005-2:2019-C01/T(3/5)",
       "title": "LUKISAN SKEMATIK SATU FASA",
-      "purpose": "Kertas Tugasan ini bertujuan untuk menilai kefahaman dan pengetahuan pelatih tentang lukisan simbol piawai bagi lukisan skematik, faktor pemilihan kabel, jenis-jenis kabel, sistem pembumian, perisian CAD, dan lukisan pendawaian elektrik satu fasa.",
+      "purpose": "Kertas Tugasan ini bertujuan untuk memantapkan kefahaman dan pengetahuan kepada pelatih tentang lukisan skematik satu fasa, simbol piawai bagi lukisan skematik, faktor pemilihan kabel, jenis – jenis kabel, sistem pembumian, perisian CAD dan cara penggunaan, sambungan kabel dan lukisan pendawaian elektrik satu fasa.",
       "instructions": [
         "Jawab semua soalan di bawah dengan jelas, tepat dan mengikut piawaian MS IEC 60364 serta Peraturan-Peraturan Elektrik 1994.",
         "Setiap soalan akan disemak dan dinilai secara automatik oleh Pegawai Penilai AI berdasarkan skema rasmi Kertas Penerangan.",
@@ -2309,37 +3888,726 @@
         {
           "id": "tug-c01-3-q1",
           "numberLabel": "1.",
-          "prompt": "Apakah yang dimaksudkan dengan lukisan skematik?",
-          "maxMarks": 4,
-          "rubricHint": "Lukisan gambar rajah satu garisan atau litar lengkap yang menunjukkan sambungan elektrik antara komponen, suis utama, RCCB, MCB dan beban menggunakan simbol piawai tanpa mengikut skala fizikal."
+          "questionType": "mcq",
+          "prompt": "Berapakah nilai kadaran arus MCB yang digunakan untuk litar lampu?",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "6 A"
+            },
+            {
+              "key": "B",
+              "label": "16 A"
+            },
+            {
+              "key": "C",
+              "label": "20 A"
+            },
+            {
+              "key": "D",
+              "label": "32 A"
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: A (6 A).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 2,
+              "x": 442,
+              "y": 472
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 2,
+                "x": 100,
+                "y": 554
+              },
+              "B": {
+                "page": 2,
+                "x": 100,
+                "y": 534
+              },
+              "C": {
+                "page": 2,
+                "x": 100,
+                "y": 513
+              },
+              "D": {
+                "page": 2,
+                "x": 100,
+                "y": 492
+              }
+            }
+          }
         },
         {
           "id": "tug-c01-3-q2",
           "numberLabel": "2.",
-          "prompt": "Senaraikan jenis-jenis perisian yang boleh digunakan untuk lukisan Computer Aided Drawing (CAD).",
-          "maxMarks": 4,
-          "rubricHint": "AutoCAD, AutoCAD Electrical, DraftSight, LibreCAD, QCAD, Visio, SolidWorks Electrical."
+          "questionType": "mcq",
+          "prompt": "Nyatakan saiz kabel litar akhir bagi soket alir keluar sambungan litar gelang bagi 6 soket alir keluar 13 A.",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "1.5 mm²"
+            },
+            {
+              "key": "B",
+              "label": "2.5 mm²"
+            },
+            {
+              "key": "C",
+              "label": "4.0 mm²"
+            },
+            {
+              "key": "D",
+              "label": "1.0 mm²"
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: B (2.5 mm²).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 2,
+              "x": 442,
+              "y": 285
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 2,
+                "x": 100,
+                "y": 368
+              },
+              "B": {
+                "page": 2,
+                "x": 100,
+                "y": 347
+              },
+              "C": {
+                "page": 2,
+                "x": 100,
+                "y": 327
+              },
+              "D": {
+                "page": 2,
+                "x": 100,
+                "y": 306
+              }
+            }
+          }
         },
         {
           "id": "tug-c01-3-q3",
           "numberLabel": "3.",
-          "prompt": "Apakah kegunaan sambungan kabel jenis Tee?",
-          "maxMarks": 4,
-          "rubricHint": "Menyambung atau mencabang talian konduktor baharu daripada kabel utama/sedia ada pada sudut 90 darjah tanpa memutuskan kabel utama."
+          "questionType": "mcq",
+          "prompt": "Apakah tujuan pembumian sistem?",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "Mengasingkan sistem apabila berlaku kerosakan."
+            },
+            {
+              "key": "B",
+              "label": "Memberi perlindungan kepada manusia dan pengguna."
+            },
+            {
+              "key": "C",
+              "label": "Konduktor pembumian hendaklah dibuat dari bahan yang boleh diterima."
+            },
+            {
+              "key": "D",
+              "label": "Sistem pembumian hendaklah disambung ke bumi dan disenggarakan dengan berkesan."
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: B (Memberi perlindungan kepada manusia dan pengguna).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 2,
+              "x": 442,
+              "y": 99
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 2,
+                "x": 100,
+                "y": 202
+              },
+              "B": {
+                "page": 2,
+                "x": 100,
+                "y": 182
+              },
+              "C": {
+                "page": 2,
+                "x": 100,
+                "y": 161
+              },
+              "D": {
+                "page": 2,
+                "x": 100,
+                "y": 140
+              }
+            }
+          }
         },
         {
           "id": "tug-c01-3-q4",
           "numberLabel": "4.",
-          "prompt": "Berikan dua (2) jenis litar pencahayaan.",
-          "maxMarks": 4,
-          "rubricHint": "Contoh: Litar kawalan satu hala (one-way switch), litar kawalan dua hala (two-way switch), litar suis perantaraan (intermediate switch), litar kecemasan."
+          "questionType": "mcq",
+          "prompt": "Apakah jenis perisian CAD di pasaran?",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "Auta CAD"
+            },
+            {
+              "key": "B",
+              "label": "Auto CAT"
+            },
+            {
+              "key": "C",
+              "label": "Microsoft Visio"
+            },
+            {
+              "key": "D",
+              "label": "Microsoft Power Point"
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: C (Microsoft Visio — A dan B mengandungi salah ejaan pengganggu).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 3,
+              "x": 442,
+              "y": 568
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 3,
+                "x": 100,
+                "y": 672
+              },
+              "B": {
+                "page": 3,
+                "x": 100,
+                "y": 651
+              },
+              "C": {
+                "page": 3,
+                "x": 100,
+                "y": 630
+              },
+              "D": {
+                "page": 3,
+                "x": 100,
+                "y": 610
+              }
+            }
+          }
         },
         {
           "id": "tug-c01-3-q5",
           "numberLabel": "5.",
-          "prompt": "Apakah kaedah yang digunakan untuk menyimpan rekod pelanggan?",
-          "maxMarks": 4,
-          "rubricHint": "Sistem pemfailan fizikal (fail projek/kabinet berkunci) dan sistem simpanan digital/berkomputer (pangkalan data, storan awan, cakera keras berjadual)."
+          "questionType": "mcq",
+          "prompt": "Apakah dua kaedah membuat penyambungan pada pengalir elektrik?",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "Sambungan manik dan sambungan pateri."
+            },
+            {
+              "key": "B",
+              "label": "Sambungan mekanik dan sambungan bateri."
+            },
+            {
+              "key": "C",
+              "label": "Sambungan pateri dan sambungan mekanikal."
+            },
+            {
+              "key": "D",
+              "label": "Sambungan terminal dan sambungan mekanikal."
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: C (Sambungan pateri dan sambungan mekanikal).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 3,
+              "x": 442,
+              "y": 403
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 3,
+                "x": 100,
+                "y": 485
+              },
+              "B": {
+                "page": 3,
+                "x": 100,
+                "y": 465
+              },
+              "C": {
+                "page": 3,
+                "x": 100,
+                "y": 444
+              },
+              "D": {
+                "page": 3,
+                "x": 100,
+                "y": 423
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-3-q6",
+          "numberLabel": "6.",
+          "questionType": "mcq",
+          "prompt": "Apakah takrif bagi litar kecil akhir?",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "Litar sambungan bagi pemutus litar kotak agihan pengguna tidak mengikut laluan pendawaian dan berakhir di beban pengguna."
+            },
+            {
+              "key": "B",
+              "label": "Litar sambungan bagi pemutus litar kotak agihan pengguna mengikut laluan pendawaian dan berakhir di beban pengguna."
+            },
+            {
+              "key": "C",
+              "label": "Litar sambungan bagi pemutus litar kotak agihan pengguna mengikut laluan pendawaian dan tidak berakhir di beban pengguna."
+            },
+            {
+              "key": "D",
+              "label": "Litar sambungan bagi pemutus litar kotak agihan pengguna tidak mengikut laluan pendawaian dan tidak berakhir di beban pengguna."
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: B.",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 3,
+              "x": 442,
+              "y": 133
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 3,
+                "x": 100,
+                "y": 320
+              },
+              "B": {
+                "page": 3,
+                "x": 100,
+                "y": 278
+              },
+              "C": {
+                "page": 3,
+                "x": 100,
+                "y": 237
+              },
+              "D": {
+                "page": 3,
+                "x": 100,
+                "y": 196
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-3-q7",
+          "numberLabel": "7.",
+          "questionType": "mcq",
+          "prompt": "Apakah jenis bekalan elektrik satu fasa yang diberikan kepada pengguna?",
+          "mcqStatements": [
+            "I. Jenis pembumian (Sistem TT dan TN-S).",
+            "II. Frekuensi yang dibenarkan adalah 50Hz dengan julat + 1%.",
+            "III. Bekalan voltan nominal Fasa Tiga 400 Volt arus ulang-alik dengan julat +10%, -6%.",
+            "IV. Bekalan voltan nominal Fasa Tunggal 230 Volt arus ulang – alik dengan julat + 10%, -6%."
+          ],
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "I, II dan III"
+            },
+            {
+              "key": "B",
+              "label": "I, II dan IV"
+            },
+            {
+              "key": "C",
+              "label": "I, III dan IV"
+            },
+            {
+              "key": "D",
+              "label": "II, III dan IV"
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: B (I, II dan IV).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 4,
+              "x": 442,
+              "y": 423
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 4,
+                "x": 100,
+                "y": 506
+              },
+              "B": {
+                "page": 4,
+                "x": 100,
+                "y": 485
+              },
+              "C": {
+                "page": 4,
+                "x": 100,
+                "y": 465
+              },
+              "D": {
+                "page": 4,
+                "x": 100,
+                "y": 444
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-3-q8",
+          "numberLabel": "8.",
+          "questionType": "mcq",
+          "prompt": "Apakah jenis – jenis sambungan kabel?",
+          "mcqStatements": [
+            "I. Sambungan Tee.",
+            "II. Sambungan Skap.",
+            "III. Sambungan Kahwin.",
+            "IV. Sambungan Berpintal Terus."
+          ],
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "I, II dan III"
+            },
+            {
+              "key": "B",
+              "label": "I, II dan IV"
+            },
+            {
+              "key": "C",
+              "label": "I, III dan IV"
+            },
+            {
+              "key": "D",
+              "label": "II, III dan IV"
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: C (I, III dan IV — Tee, Kahwin dan Berpintal Terus).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 4,
+              "x": 442,
+              "y": 154
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 4,
+                "x": 100,
+                "y": 237
+              },
+              "B": {
+                "page": 4,
+                "x": 100,
+                "y": 216
+              },
+              "C": {
+                "page": 4,
+                "x": 100,
+                "y": 196
+              },
+              "D": {
+                "page": 4,
+                "x": 100,
+                "y": 175
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-3-q9",
+          "numberLabel": "9.",
+          "questionType": "mcq",
+          "prompt": "Apakah alat kawalan yang terdapat dalam lukisan skematik?",
+          "mcqStatements": [
+            "I. Suis utama.",
+            "II. Pemotong neutral.",
+            "III. Meter kilowatt jam.",
+            "IV. Pemutus litar arus baki."
+          ],
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "I, II dan III"
+            },
+            {
+              "key": "B",
+              "label": "I, II dan IV"
+            },
+            {
+              "key": "C",
+              "label": "I, III dan IV"
+            },
+            {
+              "key": "D",
+              "label": "II, III dan IV"
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: B (I, II dan IV) atau C (I, III dan IV — meter kWj turut dipaparkan sebagai kawalan pembekal bersama suis utama dan PAB; beri markah penuh bagi B dan terima C jika seiring skema).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 5,
+              "x": 442,
+              "y": 403
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 5,
+                "x": 100,
+                "y": 527
+              },
+              "B": {
+                "page": 5,
+                "x": 100,
+                "y": 506
+              },
+              "C": {
+                "page": 5,
+                "x": 100,
+                "y": 485
+              },
+              "D": {
+                "page": 5,
+                "x": 100,
+                "y": 465
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-3-q10",
+          "numberLabel": "10.",
+          "questionType": "mcq",
+          "prompt": "Antara berikut yang manakah ialah tujuan sistem pepasangan elektrik dibumikan?",
+          "mcqStatements": [
+            "I. Sistem perlindungan.",
+            "II. Keperluan undang – undang.",
+            "III. Mengehadkan voltan berlebihan.",
+            "IV. Tidak mengadakan laluan nyahcas."
+          ],
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "I, II dan III"
+            },
+            {
+              "key": "B",
+              "label": "I, II dan IV"
+            },
+            {
+              "key": "C",
+              "label": "I, III dan IV"
+            },
+            {
+              "key": "D",
+              "label": "II, III dan IV"
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: A (I, II dan III).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 5,
+              "x": 442,
+              "y": 92
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 5,
+                "x": 100,
+                "y": 196
+              },
+              "B": {
+                "page": 5,
+                "x": 100,
+                "y": 175
+              },
+              "C": {
+                "page": 5,
+                "x": 100,
+                "y": 154
+              },
+              "D": {
+                "page": 5,
+                "x": 100,
+                "y": 133
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-3-q11",
+          "numberLabel": "11.",
+          "questionType": "diagram_label",
+          "prompt": "Berpandukan rajah di bawah, tuliskan jawapan yang betul diruang yang telah disediakan.",
+          "diagramImageUrl": "/assets/tugasan/kt3_p6_0_900x635.png",
+          "diagramCaption": "Rajah 1: Lukisan Skematik Satu Fasa",
+          "diagramCallouts": [
+            {
+              "key": "a",
+              "topPercent": 18,
+              "leftPercent": 49
+            },
+            {
+              "key": "b",
+              "topPercent": 51,
+              "leftPercent": 15
+            },
+            {
+              "key": "c",
+              "topPercent": 39,
+              "leftPercent": 35
+            },
+            {
+              "key": "d",
+              "topPercent": 86,
+              "leftPercent": 82
+            },
+            {
+              "key": "e",
+              "topPercent": 82,
+              "leftPercent": 63
+            }
+          ],
+          "maxMarks": 5,
+          "rubricHint": "1 markah setiap label betul (jumlah 5 markah): a) PAB 40A/63A DK (100mA) / Pemutus Litar Arus Baki 100mA, b) Unit Pemotong & Penghubung Neutral / Fius Perkhidmatan & Penghubung Neutral (Cut-Out & Neutral Link), c) Suis Utama / Pengasing DK MCB/Fius 63A, d) Simpanan / Litar Simpanan, e) 2 x 1C, 2.5mm² PVC + CPC (saiz kabel litar simpanan 16A).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 6,
+              "x": 442,
+              "y": 74
+            },
+            "answerSlots": [
+              {
+                "key": "a",
+                "page": 6,
+                "x": 138,
+                "y": 177,
+                "maxWidth": 265
+              },
+              {
+                "key": "b",
+                "page": 6,
+                "x": 138,
+                "y": 156,
+                "maxWidth": 265
+              },
+              {
+                "key": "c",
+                "page": 6,
+                "x": 138,
+                "y": 136,
+                "maxWidth": 265
+              },
+              {
+                "key": "d",
+                "page": 6,
+                "x": 138,
+                "y": 115,
+                "maxWidth": 265
+              },
+              {
+                "key": "e",
+                "page": 6,
+                "x": 138,
+                "y": 94,
+                "maxWidth": 265
+              }
+            ]
+          }
+        },
+        {
+          "id": "tug-c01-3-q12",
+          "numberLabel": "12.",
+          "questionType": "true_false",
+          "prompt": "Tandakan (√) pada kenyataan yang BENAR dan (X) pada kenyataan yang PALSU dalam ruangan yang disediakan.",
+          "trueFalseItems": [
+            {
+              "key": "a",
+              "text": "Simbol piawai digunakan untuk menggambarkan alat kawalan perlindungan dalam lukisan skematik. Ia tidak memudahkan kerja pendawaian dan pemasangan elektrik alat tambah dan alat kelengkapan elektrik."
+            },
+            {
+              "key": "b",
+              "text": "Lukisan skematik ialah lukisan litar elektrik dalam bentuk simbol piawai komponen."
+            },
+            {
+              "key": "c",
+              "text": "Teras kabel ialah lapisan kedua pembalut pengalir atau lapisan sesudah penebat pada sesuatu pengalir."
+            },
+            {
+              "key": "d",
+              "text": "Beban ialah permintaan kuasa elektrik yang diletakkan oleh peranti atau perkakas pada litar."
+            },
+            {
+              "key": "e",
+              "text": "Pembumian ialah satu sistem sambungan yang dibuat di antara logam – logam dalam pemasangan pendawaian elektrik dengan jisim am bumi."
+            }
+          ],
+          "maxMarks": 5,
+          "rubricHint": "1 markah setiap kenyataan (jumlah 5 markah): a) X (PALSU — simbol piawai memudahkan kerja pendawaian), b) √ (BENAR), c) X (PALSU — itu definisi sarung/salutan kabel, teras ialah pengalir berpenebat), d) √ (BENAR), e) √ (BENAR).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 7,
+              "x": 442,
+              "y": 237
+            },
+            "trueFalseRows": [
+              {
+                "key": "a",
+                "page": 7,
+                "boxX": 528,
+                "boxY": 558
+              },
+              {
+                "key": "b",
+                "page": 7,
+                "boxX": 528,
+                "boxY": 487
+              },
+              {
+                "key": "c",
+                "page": 7,
+                "boxX": 528,
+                "boxY": 431
+              },
+              {
+                "key": "d",
+                "page": 7,
+                "boxX": 528,
+                "boxY": 374
+              },
+              {
+                "key": "e",
+                "page": 7,
+                "boxX": 528,
+                "boxY": 317
+              }
+            ]
+          }
         }
       ],
       "references": [
@@ -2349,24 +4617,78 @@
         "Kementerian Tenaga, Air dan Komunikasi Malaysia. (2008). Buku Panduan Cekap Tenaga. ISBN 9789833474189."
       ],
       "sourceEbookId": "ebook-kpc01-3",
-      "updatedAt": "2026-01-01T00:00:00.000Z"
+      "updatedAt": "2026-01-01T00:00:00.000Z",
+      "sourcePdfUrl": "/assets/aistudio/16._KTC01_3-5__PINK__8676a9c4.pdf",
+      "pdfOverlayMeta": {
+        "namePos": {
+          "page": 1,
+          "x": 58,
+          "y": 272
+        },
+        "icPos": {
+          "page": 1,
+          "x": 226,
+          "y": 272
+        },
+        "datePos": {
+          "page": 1,
+          "x": 428,
+          "y": 272
+        },
+        "userIdPos": {
+          "page": 1,
+          "x": 428,
+          "y": 259
+        },
+        "totalMarkPos": {
+          "page": 7,
+          "x": 468,
+          "y": 177
+        },
+        "statusPos": {
+          "page": 7,
+          "x": 312,
+          "y": 177
+        },
+        "stampBox": {
+          "page": 8,
+          "x": 300,
+          "y": 666,
+          "w": 227,
+          "h": 97
+        },
+        "headerLogoBox": {
+          "page": 1,
+          "x": 54,
+          "y": 631,
+          "w": 162,
+          "h": 141
+        },
+        "headerAddrBox": {
+          "page": 1,
+          "x": 222,
+          "y": 696,
+          "w": 320,
+          "h": 76
+        }
+      }
     },
     {
       "id": "tug-c01-4",
       "cuId": "cu-201",
-      "setCode": "T(4/5)",
+      "setCode": "KT(4/5)",
       "programCodeTitle": "F432-005-2:2019 SINGLE PHASE ELECTRICAL INSTALLATION AND MAINTENANCE",
       "tahap": "2",
-      "cuCodeTitle": "F432-005-2:2019 - C01 SINGLE PHASE DRAWING",
+      "cuCodeTitle": "F432-005-2:2019 -C01 SINGLE PHASE DRAWING",
       "workActivities": [
         "1. PREPARE SINGLE PHASE DRAWING REQUIREMENTS.",
         "2. PERFORM SINGLE PHASE DRAWING.",
         "3. CALCULATE MATERIALS REQUIREMENT.",
         "4. PROPOSE SINGLE PHASE DRAWING PAPERWORK."
       ],
-      "paperCode": "F432-005-2:2019-C01/T(4/5)",
+      "paperCode": "F432-005-2:2019-C01/KT(4/5)",
       "title": "PENGIRAAN KOS BAHAN",
-      "purpose": "Kertas Tugasan ini bertujuan untuk menilai kefahaman dan pengetahuan pelatih tentang pengiraan anggaran kos pendawaian, pengiraan peranti pelindung dan saiz konduktor, harga bahan berdasarkan pasaran dan pengiraan jumlah keseluruhan suatu pendawaian elektrik.",
+      "purpose": "Kertas Tugasan ini bertujuan untuk memantapkan kefahaman dan pengetahuan kepada pelatih tentang pengiraan anggaran kos pendawaian, pengiraan peranti pelindung dan saiz konduktor, jenis kabel dan pengalir, keperluan sebelum melakukan pemasangan elektrik, jenis – jenis aksesori elektrik, harga bahan berdasarkan pasaran dan pengiraan jumlah keseluruhan suatu pendawaian elektrik.",
       "instructions": [
         "Jawab semua soalan di bawah dengan jelas, tepat dan mengikut piawaian MS IEC 60364 serta Peraturan-Peraturan Elektrik 1994.",
         "Setiap soalan akan disemak dan dinilai secara automatik oleh Pegawai Penilai AI berdasarkan skema rasmi Kertas Penerangan.",
@@ -2377,30 +4699,754 @@
         {
           "id": "tug-c01-4-q1",
           "numberLabel": "1.",
-          "prompt": "Terangkan mengenai anggaran kos pendawaian.",
-          "maxMarks": 5,
-          "rubricHint": "Pengiraan awal keseluruhan kos projek melibatkan kos bahan (kabel, aksesori, DB, perlindungan), kos upah buruh, kos pengangkutan/pengurusan dan margin keuntungan sebelum kerja dijalankan."
+          "questionType": "mcq",
+          "prompt": "Apakah yang dimaksudkan dengan aksesori pendawaian elektrik?",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "Aksesori digunakan mengikut kesesuaian dan keperluan dipadankan dengan fungsi kegunaannya."
+            },
+            {
+              "key": "B",
+              "label": "Aksesori digunakan mengikut kesesuaian dan bukan keperluan dipadankan dengan fungsi kegunaannya."
+            },
+            {
+              "key": "C",
+              "label": "Aksesori digunakan mengikut kesesuaian dan keperluan tidak dipadankan dengan fungsi kegunaannya."
+            },
+            {
+              "key": "D",
+              "label": "Aksesori digunakan mengikut kesesuaian dan bukan keperluan tidak dipadankan dengan fungsi kegunaannya."
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: A.",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 2,
+              "x": 442,
+              "y": 409
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 2,
+                "x": 100,
+                "y": 575
+              },
+              "B": {
+                "page": 2,
+                "x": 100,
+                "y": 534
+              },
+              "C": {
+                "page": 2,
+                "x": 100,
+                "y": 492
+              },
+              "D": {
+                "page": 2,
+                "x": 100,
+                "y": 451
+              }
+            }
+          }
         },
         {
           "id": "tug-c01-4-q2",
           "numberLabel": "2.",
-          "prompt": "Huraikan tentang keperluan sebelum melakukan kerja pemasangan.",
-          "maxMarks": 5,
-          "rubricHint": "Mempunyai lukisan pelan/skematik diluluskan, senarai bahan (BOM) dan alat mencukupi, permit/kelulusan kerja, pemeriksaan tapak serta pematuhan PPE & keselamatan."
+          "questionType": "mcq",
+          "prompt": "Mengapakah anggaran kos tenaga kerja berpandukan jadual kerja?",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "Kerja – kerja yang tidak dirancang dapat dilaksanakan mengikut prosedur dan dapat disiapkan dalam masa yang dianggarkan."
+            },
+            {
+              "key": "B",
+              "label": "Kerja – kerja yang dirancang dapat dilaksanakan mengikut prosedur dan tidak dapat disiapkan dalam masa yang dianggarkan."
+            },
+            {
+              "key": "C",
+              "label": "Kerja – kerja yang dirancang dapat dilaksanakan mengikut prosedur dan dapat disiapkan dalam masa yang dianggarkan."
+            },
+            {
+              "key": "D",
+              "label": "Kerja – kerja yang tidak dirancang dapat dilaksanakan mengikut prosedur dan tidak dapat disiapkan dalam masa yang dianggarkan."
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: C.",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 2,
+              "x": 442,
+              "y": 140
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 2,
+                "x": 100,
+                "y": 327
+              },
+              "B": {
+                "page": 2,
+                "x": 100,
+                "y": 285
+              },
+              "C": {
+                "page": 2,
+                "x": 100,
+                "y": 244
+              },
+              "D": {
+                "page": 2,
+                "x": 100,
+                "y": 202
+              }
+            }
+          }
         },
         {
           "id": "tug-c01-4-q3",
           "numberLabel": "3.",
-          "prompt": "Terangkan kos bahan mengikut pasaran semasa.",
-          "maxMarks": 5,
-          "rubricHint": "Harga bahan elektrik seperti kabel tembaga, konduit, MCB/RCCB dan aksesori berubah mengikut harga komoditi semasa, jenama, piawaian SIRIM dan pembekal; perlu sebut harga terkini untuk elak kerugian."
+          "questionType": "mcq",
+          "prompt": "Apakah yang dimaksudkan dengan sebut harga pembekal?",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "Pernyataan harga yang tidak diberikan oleh pembekal kepada bakal pembeli untuk sesuatu barangan atau perkhidmatan yang diperlukan oleh pengguna tersebut."
+            },
+            {
+              "key": "B",
+              "label": "Pernyataan harga yang diberikan oleh pembekal kepada bakal pembeli untuk sesuatu barangan atau perkhidmatan yang diperlukan oleh pengguna tersebut."
+            },
+            {
+              "key": "C",
+              "label": "Pernyataan harga yang diberikan oleh pembekal kepada bukan pembeli untuk sesuatu barangan atau perkhidmatan yang diperlukan oleh pengguna tersebut."
+            },
+            {
+              "key": "D",
+              "label": "Pernyataan harga yang diberikan oleh pembekal kepada bakal pembeli untuk sesuatu barangan atau perkhidmatan yang tidak diperlukan oleh pengguna tersebut."
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: B.",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 3,
+              "x": 416,
+              "y": 465
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 3,
+                "x": 100,
+                "y": 713
+              },
+              "B": {
+                "page": 3,
+                "x": 100,
+                "y": 651
+              },
+              "C": {
+                "page": 3,
+                "x": 100,
+                "y": 589
+              },
+              "D": {
+                "page": 3,
+                "x": 100,
+                "y": 527
+              }
+            }
+          }
         },
         {
           "id": "tug-c01-4-q4",
           "numberLabel": "4.",
-          "prompt": "Huraikan perkara yang perlu diketahui ketika mengira harga bahan.",
+          "questionType": "mcq",
+          "prompt": "Apakah yang dimaksudkan dengan lembar?",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "Bilangan penebat yang terdapat dalam satu kabel."
+            },
+            {
+              "key": "B",
+              "label": "Bilangan konduktor yang terdapat dalam satu kabel."
+            },
+            {
+              "key": "C",
+              "label": "Bilangan penebat yang terdapat dalam banyak kabel."
+            },
+            {
+              "key": "D",
+              "label": "Bilangan konduktor yang terdapat dalam banyak kabel."
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: B (Bilangan konduktor yang terdapat dalam satu kabel).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 3,
+              "x": 442,
+              "y": 299
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 3,
+                "x": 100,
+                "y": 382
+              },
+              "B": {
+                "page": 3,
+                "x": 100,
+                "y": 361
+              },
+              "C": {
+                "page": 3,
+                "x": 100,
+                "y": 340
+              },
+              "D": {
+                "page": 3,
+                "x": 100,
+                "y": 320
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-4-q5",
+          "numberLabel": "5.",
+          "questionType": "mcq",
+          "prompt": "Apakah perkara yang perlu dipertimbangkan sebelum membuat kerja – kerja pemasangan?",
+          "mcqStatements": [
+            "I. Jadual kerja yang tidak tersusun.",
+            "II. Pendawaian hendaklah sesuai dengan struktur bangunan.",
+            "III. Pelbagai peringkat pendawaian dilakukan mengikut peringkat yang betul.",
+            "IV. Kebanyakan bangunan dipasang dengan siling jenis gantung atau plaster kapur."
+          ],
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "I, II dan III"
+            },
+            {
+              "key": "B",
+              "label": "I, II dan IV"
+            },
+            {
+              "key": "C",
+              "label": "I, III dan IV"
+            },
+            {
+              "key": "D",
+              "label": "II, III dan IV"
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: D (II, III dan IV).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 4,
+              "x": 442,
+              "y": 485
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 4,
+                "x": 100,
+                "y": 568
+              },
+              "B": {
+                "page": 4,
+                "x": 100,
+                "y": 548
+              },
+              "C": {
+                "page": 4,
+                "x": 100,
+                "y": 527
+              },
+              "D": {
+                "page": 4,
+                "x": 100,
+                "y": 506
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-4-q6",
+          "numberLabel": "6.",
+          "questionType": "mcq",
+          "prompt": "Apakah dua jenis sesalur yang biasa digunakan?",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "Bahan logam dan PVK."
+            },
+            {
+              "key": "B",
+              "label": "Bahan logam dan plastik."
+            },
+            {
+              "key": "C",
+              "label": "Bahan aluminium dan kuprum."
+            },
+            {
+              "key": "D",
+              "label": "Bahan logam dan aluminium."
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: A (Bahan logam dan PVK).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 4,
+              "x": 442,
+              "y": 320
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 4,
+                "x": 100,
+                "y": 423
+              },
+              "B": {
+                "page": 4,
+                "x": 100,
+                "y": 403
+              },
+              "C": {
+                "page": 4,
+                "x": 100,
+                "y": 382
+              },
+              "D": {
+                "page": 4,
+                "x": 100,
+                "y": 361
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-4-q7",
+          "numberLabel": "7.",
+          "questionType": "mcq",
+          "prompt": "Apakah jenis pendawaian yang sesuai bagi konduktor bertebat selapis?",
+          "mcqStatements": [
+            "I. Pendawaian Sesalur.",
+            "II. Pendawaian Permukaan.",
+            "III. Pendawaian Underground.",
+            "IV. Pendawaian Pembuluh / Konduit."
+          ],
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "I, II dan III"
+            },
+            {
+              "key": "B",
+              "label": "I, II dan IV"
+            },
+            {
+              "key": "C",
+              "label": "I, III dan IV"
+            },
+            {
+              "key": "D",
+              "label": "II, III dan IV"
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: B (I, II dan IV).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 5,
+              "x": 442,
+              "y": 672
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 5,
+                "x": 100,
+                "y": 754
+              },
+              "B": {
+                "page": 5,
+                "x": 100,
+                "y": 734
+              },
+              "C": {
+                "page": 5,
+                "x": 100,
+                "y": 713
+              },
+              "D": {
+                "page": 5,
+                "x": 100,
+                "y": 692
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-4-q8",
+          "numberLabel": "8.",
+          "questionType": "mcq",
+          "prompt": "Pilih faktor yang perlu dilaksanakan apabila memulakan kerja – kerja pendawaian.",
+          "mcqStatements": [
+            "I. Pembelian bahan awal.",
+            "II. Kualiti bahan mengikut piawaian MS.",
+            "III. Pembelian berpandukan anggaran kos.",
+            "IV. Kesesuaian jenis pendawaian mengikut jenis bangunan."
+          ],
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "I, II dan III"
+            },
+            {
+              "key": "B",
+              "label": "I, II dan IV"
+            },
+            {
+              "key": "C",
+              "label": "I, III dan IV"
+            },
+            {
+              "key": "D",
+              "label": "II, III dan IV"
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: D (II, III dan IV).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 5,
+              "x": 442,
+              "y": 382
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 5,
+                "x": 100,
+                "y": 465
+              },
+              "B": {
+                "page": 5,
+                "x": 100,
+                "y": 444
+              },
+              "C": {
+                "page": 5,
+                "x": 100,
+                "y": 423
+              },
+              "D": {
+                "page": 5,
+                "x": 100,
+                "y": 403
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-4-q9",
+          "numberLabel": "9.",
+          "questionType": "mcq",
+          "prompt": "Apakah maklumat yang dirujuk bagi proses penyediaan bahan?",
+          "mcqStatements": [
+            "I. Kuantiti bahan mengikut kehendak.",
+            "II. Pembelian berpandukan anggaran kos.",
+            "III. Kuantiti bahan mengikut kualiti piawaian.",
+            "IV. Bukan semua bahan mengikut spesifikasi."
+          ],
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "I, II dan III"
+            },
+            {
+              "key": "B",
+              "label": "I, II dan IV"
+            },
+            {
+              "key": "C",
+              "label": "I, III dan IV"
+            },
+            {
+              "key": "D",
+              "label": "II, III dan IV"
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: A (I, II dan III).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 5,
+              "x": 442,
+              "y": 92
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 5,
+                "x": 100,
+                "y": 196
+              },
+              "B": {
+                "page": 5,
+                "x": 100,
+                "y": 175
+              },
+              "C": {
+                "page": 5,
+                "x": 100,
+                "y": 154
+              },
+              "D": {
+                "page": 5,
+                "x": 100,
+                "y": 133
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-4-q10",
+          "numberLabel": "10.",
+          "questionType": "mcq",
+          "prompt": "Antara berikut yang manakah adalah berkenaan dengan starter?",
+          "mcqStatements": [
+            "I. Suis bara dua pin berkualiti tinggi.",
+            "II. Terdapat juga starter jenis denyut elektronik.",
+            "III. Disahkan daripada ujian gangguan elektromagnet.",
+            "IV. Dipasang dengan kapasitor penindasan gangguan isyarat radio."
+          ],
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "I, II dan III"
+            },
+            {
+              "key": "B",
+              "label": "I, II dan IV"
+            },
+            {
+              "key": "C",
+              "label": "I, III dan IV"
+            },
+            {
+              "key": "D",
+              "label": "II, III dan IV"
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: B (I, II dan IV).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 6,
+              "x": 442,
+              "y": 506
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 6,
+                "x": 100,
+                "y": 610
+              },
+              "B": {
+                "page": 6,
+                "x": 100,
+                "y": 589
+              },
+              "C": {
+                "page": 6,
+                "x": 100,
+                "y": 568
+              },
+              "D": {
+                "page": 6,
+                "x": 100,
+                "y": 548
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-4-q11",
+          "numberLabel": "11.",
+          "questionType": "true_false",
+          "prompt": "Tandakan (√) pada kenyataan yang BENAR dan (X) pada kenyataan yang PALSU dalam ruangan yang disediakan.",
+          "trueFalseItems": [
+            {
+              "key": "a",
+              "text": "Pemasangan hendaklah sesuai dengan struktur bangunan, terutamanya akan menyebabkan kerosakan atau gangguan kepada bangunan tersebut."
+            },
+            {
+              "key": "b",
+              "text": "Pelbagai peringkat pendawaian sepatutnya dilakukan mengikut peringkat yang betul selaras dengan perkembangan pembinaan bangunan peringkat demi peringkat."
+            },
+            {
+              "key": "c",
+              "text": "Jadual kerja yang tidak tersusun dapat mengelakkan daripada melakukan perkara yang tidak perlu."
+            },
+            {
+              "key": "d",
+              "text": "Kebanyakan bangunan masa kini dipasang dengan siling jenis gantung plaster kapur, terlapis lepa serta salur perkhidmatan."
+            },
+            {
+              "key": "e",
+              "text": "Sesalur mini diperbuat dari bahan PVK berwarna putih dan tahan lasak serta tahan hentaman."
+            }
+          ],
           "maxMarks": 5,
-          "rubricHint": "Kuantiti sebenar dari pelan (termasuk panjang kabel & pembaziran 5-10%), spesifikasi/saiz tepat, harga seunit dari pembekal, jenama bertanda SIRIM dan cukai/kos penghantaran."
+          "rubricHint": "1 markah setiap kenyataan (jumlah 5 markah): a) X (PALSU — tidak menyebabkan kerosakan), b) √ (BENAR), c) X (PALSU — jadual kerja tersusun), d) √ (BENAR), e) √ (BENAR).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 6,
+              "x": 442,
+              "y": 66
+            },
+            "trueFalseRows": [
+              {
+                "key": "a",
+                "page": 6,
+                "boxX": 528,
+                "boxY": 382
+              },
+              {
+                "key": "b",
+                "page": 6,
+                "boxX": 528,
+                "boxY": 309
+              },
+              {
+                "key": "c",
+                "page": 6,
+                "boxX": 528,
+                "boxY": 239
+              },
+              {
+                "key": "d",
+                "page": 6,
+                "boxX": 528,
+                "boxY": 183
+              },
+              {
+                "key": "e",
+                "page": 6,
+                "boxX": 528,
+                "boxY": 126
+              }
+            ]
+          }
+        },
+        {
+          "id": "tug-c01-4-q12",
+          "numberLabel": "12.",
+          "questionType": "matching",
+          "prompt": "Padankan jenis – jenis alat kelengkapan dan kegunaannya.",
+          "matchingLeftHeader": "Alat kelengkapan",
+          "matchingRightHeader": "Kegunaan",
+          "matchingRows": [
+            {
+              "leftText": "Palam",
+              "rightText": "Digunakan oleh pembekal untuk menyukat jumlah tenaga elektrik yang digunakan oleh pengguna."
+            },
+            {
+              "leftText": "Unit pemotong & Penghubung neutral",
+              "rightText": "Mendapatkan punca bekalan kuasa dengan menyambungkan kepada alat kelengkapan elektrik mudah alih."
+            },
+            {
+              "leftText": "Meter Kilowatt Jam",
+              "rightText": "Menggantikan suis dan bertindak secara automatik apabila mengesan cahaya."
+            },
+            {
+              "leftText": "Soket Alir Keluar",
+              "rightText": "Menyambung kelengkapan elektrik dengan soket alir keluar melalui kord atau kabel boleh lentur."
+            },
+            {
+              "leftText": "Photocell",
+              "rightText": "Sebagai pengehad arus yang masuk ke dalam rumah, juga sebagai penyambung dan pemutus bekalan dari pihak pembekal."
+            }
+          ],
+          "maxMarks": 5,
+          "rubricHint": "1 markah setiap padanan betul (jumlah 5 markah): Palam -> Menyambung kelengkapan elektrik dengan soket alir keluar melalui kord atau kabel boleh lentur; Unit pemotong & Penghubung neutral -> Sebagai pengehad arus yang masuk ke dalam rumah...; Meter Kilowatt Jam -> Digunakan oleh pembekal untuk menyukat jumlah tenaga elektrik...; Soket Alir Keluar -> Mendapatkan punca bekalan kuasa... mudah alih; Photocell -> Menggantikan suis dan bertindak secara automatik apabila mengesan cahaya.",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 7,
+              "x": 442,
+              "y": 205
+            },
+            "matchingLeftPoints": [
+              {
+                "rowIdx": 0,
+                "page": 7,
+                "x": 224,
+                "y": 653
+              },
+              {
+                "rowIdx": 1,
+                "page": 7,
+                "x": 224,
+                "y": 560
+              },
+              {
+                "rowIdx": 2,
+                "page": 7,
+                "x": 224,
+                "y": 476
+              },
+              {
+                "rowIdx": 3,
+                "page": 7,
+                "x": 224,
+                "y": 403
+              },
+              {
+                "rowIdx": 4,
+                "page": 7,
+                "x": 224,
+                "y": 310
+              }
+            ],
+            "matchingRightPoints": [
+              {
+                "rowIdx": 0,
+                "page": 7,
+                "x": 331,
+                "y": 653
+              },
+              {
+                "rowIdx": 1,
+                "page": 7,
+                "x": 331,
+                "y": 560
+              },
+              {
+                "rowIdx": 2,
+                "page": 7,
+                "x": 331,
+                "y": 476
+              },
+              {
+                "rowIdx": 3,
+                "page": 7,
+                "x": 331,
+                "y": 403
+              },
+              {
+                "rowIdx": 4,
+                "page": 7,
+                "x": 331,
+                "y": 310
+              }
+            ]
+          }
         }
       ],
       "references": [
@@ -2410,24 +5456,78 @@
         "Kementerian Tenaga, Air dan Komunikasi Malaysia. (2008). Buku Panduan Cekap Tenaga. ISBN 9789833474189."
       ],
       "sourceEbookId": "ebook-kpc01-4",
-      "updatedAt": "2026-01-01T00:00:00.000Z"
+      "updatedAt": "2026-01-01T00:00:00.000Z",
+      "sourcePdfUrl": "/assets/aistudio/27._KTC01_4-5__PINK__fdbec656.pdf",
+      "pdfOverlayMeta": {
+        "namePos": {
+          "page": 1,
+          "x": 58,
+          "y": 322
+        },
+        "icPos": {
+          "page": 1,
+          "x": 226,
+          "y": 322
+        },
+        "datePos": {
+          "page": 1,
+          "x": 428,
+          "y": 322
+        },
+        "userIdPos": {
+          "page": 1,
+          "x": 428,
+          "y": 309
+        },
+        "totalMarkPos": {
+          "page": 8,
+          "x": 468,
+          "y": 715
+        },
+        "statusPos": {
+          "page": 8,
+          "x": 312,
+          "y": 715
+        },
+        "stampBox": {
+          "page": 8,
+          "x": 300,
+          "y": 588,
+          "w": 227,
+          "h": 97
+        },
+        "headerLogoBox": {
+          "page": 1,
+          "x": 54,
+          "y": 631,
+          "w": 162,
+          "h": 141
+        },
+        "headerAddrBox": {
+          "page": 1,
+          "x": 222,
+          "y": 696,
+          "w": 320,
+          "h": 76
+        }
+      }
     },
     {
       "id": "tug-c01-5",
       "cuId": "cu-201",
-      "setCode": "T(5/5)",
+      "setCode": "KT(5/5)",
       "programCodeTitle": "F432-005-2:2019 SINGLE PHASE ELECTRICAL INSTALLATION AND MAINTENANCE",
       "tahap": "2",
-      "cuCodeTitle": "F432-005-2:2019 - C01 SINGLE PHASE DRAWING",
+      "cuCodeTitle": "F432-005-2:2019 -C01 SINGLE PHASE DRAWING",
       "workActivities": [
         "1. PREPARE SINGLE PHASE DRAWING REQUIREMENTS.",
         "2. PERFORM SINGLE PHASE DRAWING.",
         "3. CALCULATE MATERIALS REQUIREMENT.",
         "4. PROPOSE SINGLE PHASE DRAWING PAPERWORK."
       ],
-      "paperCode": "F432-005-2:2019-C01/T(5/5)",
+      "paperCode": "F432-005-2:2019-C01/KT(5/5)",
       "title": "PROSEDUR KERTAS KERJA LUKISAN SATU FASA",
-      "purpose": "Kertas Tugasan ini bertujuan untuk menilai kefahaman dan pengetahuan pelatih tentang tujuan dan kaedah pembentangan, laporan kerja, penyediaan kertas kerja bagi lukisan elektrik dan kandungan kertas kerja.",
+      "purpose": "Kertas Tugasan ini bertujuan untuk memantapkan kefahaman dan pengetahuan kepada pelatih tentang tujuan dan kaedah pembentangan, laporan kerja, penyediaan kertas kerja bagi lukisan elektrik dan kandungan kertas kerja.",
       "instructions": [
         "Jawab semua soalan di bawah dengan jelas, tepat dan mengikut piawaian MS IEC 60364 serta Peraturan-Peraturan Elektrik 1994.",
         "Setiap soalan akan disemak dan dinilai secara automatik oleh Pegawai Penilai AI berdasarkan skema rasmi Kertas Penerangan.",
@@ -2438,23 +5538,735 @@
         {
           "id": "tug-c01-5-q1",
           "numberLabel": "1.",
-          "prompt": "Terangkan tujuan prosedur kertas kerja.",
-          "maxMarks": 5,
-          "rubricHint": "Memastikan penyediaan dokumen projek/lukisan elektrik tersusun, lengkap, piawai, mudah disemak untuk kelulusan pelanggan/pengajar dan menjadi rekod rasmi kerja."
+          "questionType": "mcq",
+          "prompt": "Apakah tujuan pembentangan diadakan?",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "Menyampaikan maklumat."
+            },
+            {
+              "key": "B",
+              "label": "Meyakinkan mereka yang tidak mendengar."
+            },
+            {
+              "key": "C",
+              "label": "Menyampaikan motivasi kepada semua manusia."
+            },
+            {
+              "key": "D",
+              "label": "Mempromosikan produk atau perkhidmatan yang tidak disediakan."
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: A (Menyampaikan maklumat).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 2,
+              "x": 442,
+              "y": 492
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 2,
+                "x": 100,
+                "y": 575
+              },
+              "B": {
+                "page": 2,
+                "x": 100,
+                "y": 554
+              },
+              "C": {
+                "page": 2,
+                "x": 100,
+                "y": 534
+              },
+              "D": {
+                "page": 2,
+                "x": 100,
+                "y": 513
+              }
+            }
+          }
         },
         {
           "id": "tug-c01-5-q2",
           "numberLabel": "2.",
-          "prompt": "Terangkan kaedah pembentangan dan laporan.",
-          "maxMarks": 5,
-          "rubricHint": "Penyampaian maklumat teknikal secara berstruktur menggunakan slaid ringkas, visual/lukisan jelas, komunikasi dua hala dan laporan bertulis yang merangkumi objektif, spesifikasi, pengiraan dan kesimpulan."
+          "questionType": "mcq",
+          "prompt": "Apakah 2 jenis kaedah pembentangan?",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "Laporan dan perbincangan."
+            },
+            {
+              "key": "B",
+              "label": "Laporan dan pembentangan."
+            },
+            {
+              "key": "C",
+              "label": "Pembentangan dan ceramah motivasi."
+            },
+            {
+              "key": "D",
+              "label": "Pembentangan dan pengiraan kos bahan."
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: B (Laporan dan pembentangan — KP(5/5) §1.1: slides/pembentangan dan laporan).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 2,
+              "x": 442,
+              "y": 306
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 2,
+                "x": 100,
+                "y": 410
+              },
+              "B": {
+                "page": 2,
+                "x": 100,
+                "y": 389
+              },
+              "C": {
+                "page": 2,
+                "x": 100,
+                "y": 368
+              },
+              "D": {
+                "page": 2,
+                "x": 100,
+                "y": 347
+              }
+            }
+          }
         },
         {
           "id": "tug-c01-5-q3",
           "numberLabel": "3.",
-          "prompt": "Terangkan kaedah penyediaan kertas kerja bagi lukisan elektrik.",
+          "questionType": "mcq",
+          "prompt": "Apakah yang dimaksudkan pembentangan?",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "Proses menyampaikan idea, projek baru atau hasil kerja yang dipaparkan dan dijelaskan kepada khalayak ramai."
+            },
+            {
+              "key": "B",
+              "label": "Proses menyampaikan idea, projek baru atau hasil kerja yang dipaparkan dan tidak dijelaskan kepada khalayak ramai."
+            },
+            {
+              "key": "C",
+              "label": "Proses menyampaikan idea, projek baru atau hasil kerja yang tidak dipaparkan dan dijelaskan kepada khalayak ramai."
+            },
+            {
+              "key": "D",
+              "label": "Proses menyampaikan idea, projek baru atau hasil kerja yang tidak dipaparkan dan tidak dijelaskan kepada khalayak ramai."
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: A.",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 2,
+              "x": 442,
+              "y": 58
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 2,
+                "x": 100,
+                "y": 223
+              },
+              "B": {
+                "page": 2,
+                "x": 100,
+                "y": 182
+              },
+              "C": {
+                "page": 2,
+                "x": 100,
+                "y": 140
+              },
+              "D": {
+                "page": 2,
+                "x": 100,
+                "y": 99
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-5-q4",
+          "numberLabel": "4.",
+          "questionType": "mcq",
+          "prompt": "Apakah yang dimaksudkan dengan pemilik ?",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "Pemilik projek dan pemilik tanah tetapi tidak tertera dalam geran."
+            },
+            {
+              "key": "B",
+              "label": "Pemilik projek dan pemilik tanah seperti yang tertera dalam geran."
+            },
+            {
+              "key": "C",
+              "label": "Pemilik syarikat kontraktor yang akan membuat projek pendawaian."
+            },
+            {
+              "key": "D",
+              "label": "Pemilik projek tetapi bukan pemilik tanah seperti yang tertera dalam geran."
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: B.",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 3,
+              "x": 442,
+              "y": 610
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 3,
+                "x": 100,
+                "y": 713
+              },
+              "B": {
+                "page": 3,
+                "x": 100,
+                "y": 692
+              },
+              "C": {
+                "page": 3,
+                "x": 100,
+                "y": 672
+              },
+              "D": {
+                "page": 3,
+                "x": 100,
+                "y": 651
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-5-q5",
+          "numberLabel": "5.",
+          "questionType": "mcq",
+          "prompt": "Apakah perkara yang diperlukan bagi pengumpulan data?",
+          "mcqStatements": [
+            "I. Foto tapak.",
+            "II. Pelan tapak.",
+            "III. Kerja perobohan.",
+            "IV. Kerja pengubahsuaian."
+          ],
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "I, II dan III"
+            },
+            {
+              "key": "B",
+              "label": "I, II dan IV"
+            },
+            {
+              "key": "C",
+              "label": "I, III dan IV"
+            },
+            {
+              "key": "D",
+              "label": "II, III dan IV"
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: B (I, II dan IV — KP(5/5) ms.11 menyenaraikan foto tapak, pelan tapak, dan kerja pengubahsuaian).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 3,
+              "x": 442,
+              "y": 361
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 3,
+                "x": 100,
+                "y": 444
+              },
+              "B": {
+                "page": 3,
+                "x": 100,
+                "y": 423
+              },
+              "C": {
+                "page": 3,
+                "x": 100,
+                "y": 403
+              },
+              "D": {
+                "page": 3,
+                "x": 100,
+                "y": 382
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-5-q6",
+          "numberLabel": "6.",
+          "questionType": "mcq",
+          "prompt": "Apakah tujuan penyediaan kertas kerja?",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "Panduan dalam melakukan kerja – kerja pendawaian elektrik dan sebagai kontrak kepada pengguna dan asas selepas memulakan sesuatu projek pendawaian."
+            },
+            {
+              "key": "B",
+              "label": "Panduan dalam melakukan kerja – kerja pendawaian elektrik dan sebagai rujukan kepada semua dan asas sebelum memulakan sesuatu projek pendawaian."
+            },
+            {
+              "key": "C",
+              "label": "Panduan dalam melakukan kerja – kerja pendawaian elektrik dan sebagai kontrak kepada pengguna dan asas sebelum memulakan sesuatu projek pendawaian."
+            },
+            {
+              "key": "D",
+              "label": "Panduan dalam melakukan kerja – kerja pendawaian elektrik dan sebagai kontrak kepada pengguna dan pengakhiran sebelum memulakan sesuatu projek pendawaian."
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: C.",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 3,
+              "x": 442,
+              "y": 51
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 3,
+                "x": 99,
+                "y": 299
+              },
+              "B": {
+                "page": 3,
+                "x": 99,
+                "y": 237
+              },
+              "C": {
+                "page": 3,
+                "x": 99,
+                "y": 175
+              },
+              "D": {
+                "page": 3,
+                "x": 99,
+                "y": 113
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-5-q7",
+          "numberLabel": "7.",
+          "questionType": "mcq",
+          "prompt": "Apakah langkah – langkah pelaksanaan kerja?",
+          "mcqStatements": [
+            "I. Pengumpulan data.",
+            "II. Penyediaan bagi pembentangan.",
+            "III. Lawatan dan tinjauan awal tapak.",
+            "IV. Sedia pelan pelaksanaan lukisan terukur."
+          ],
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "I, II dan III"
+            },
+            {
+              "key": "B",
+              "label": "I, II dan IV"
+            },
+            {
+              "key": "C",
+              "label": "I, III dan IV"
+            },
+            {
+              "key": "D",
+              "label": "II, III dan IV"
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: C (I, III dan IV — Jadual 1 KP(5/5) ms.10).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 4,
+              "x": 442,
+              "y": 527
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 4,
+                "x": 100,
+                "y": 610
+              },
+              "B": {
+                "page": 4,
+                "x": 100,
+                "y": 589
+              },
+              "C": {
+                "page": 4,
+                "x": 100,
+                "y": 568
+              },
+              "D": {
+                "page": 4,
+                "x": 100,
+                "y": 548
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-5-q8",
+          "numberLabel": "8.",
+          "questionType": "mcq",
+          "prompt": "Apakah tujuan pengumpulan data bangunan?",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "Mendapatkan sedikit maklumat berkenaan daripada rekod – rekod sejarah."
+            },
+            {
+              "key": "B",
+              "label": "Mendapatkan seberapa banyak maklumat berkenaan daripada rekod – rekod baru."
+            },
+            {
+              "key": "C",
+              "label": "Mendapatkan seberapa banyak maklumat berkenaan daripada rekod – rekod sejarah."
+            },
+            {
+              "key": "D",
+              "label": "Mendapatkan seberapa banyak maklumat berkenaan daripada bukan rekod – rekod sejarah."
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: C.",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 4,
+              "x": 442,
+              "y": 320
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 4,
+                "x": 100,
+                "y": 465
+              },
+              "B": {
+                "page": 4,
+                "x": 100,
+                "y": 444
+              },
+              "C": {
+                "page": 4,
+                "x": 100,
+                "y": 403
+              },
+              "D": {
+                "page": 4,
+                "x": 100,
+                "y": 361
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-5-q9",
+          "numberLabel": "9.",
+          "questionType": "mcq",
+          "prompt": "Apakah maklumat yang perlu ada di dalam tajuk lukisan?",
+          "mcqStatements": [
+            "I. Tajuk projek.",
+            "II. Tajuk lukisan.",
+            "III. Nama pemilik.",
+            "IV. Tarikh siap projek."
+          ],
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "I, II dan III"
+            },
+            {
+              "key": "B",
+              "label": "I, II dan IV"
+            },
+            {
+              "key": "C",
+              "label": "I, III dan IV"
+            },
+            {
+              "key": "D",
+              "label": "II, III dan IV"
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: A (I, II dan III).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 4,
+              "x": 442,
+              "y": 51
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 4,
+                "x": 99,
+                "y": 154
+              },
+              "B": {
+                "page": 4,
+                "x": 99,
+                "y": 133
+              },
+              "C": {
+                "page": 4,
+                "x": 99,
+                "y": 113
+              },
+              "D": {
+                "page": 4,
+                "x": 99,
+                "y": 92
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-5-q10",
+          "numberLabel": "10.",
+          "questionType": "mcq",
+          "prompt": "Mengapakah warna latar belakang dan teks perlu warna yang gelap?",
+          "mcqOptions": [
+            {
+              "key": "A",
+              "label": "Menjadikannya menarik."
+            },
+            {
+              "key": "B",
+              "label": "Boleh menarik perhatian penonton."
+            },
+            {
+              "key": "C",
+              "label": "Menjamin penonton akan tetap bersemangat."
+            },
+            {
+              "key": "D",
+              "label": "Supaya teks boleh dibaca dan warna tidak bertembung."
+            }
+          ],
+          "maxMarks": 1,
+          "rubricHint": "Jawapan tepat: D (Supaya teks boleh dibaca dan warna tidak bertembung).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 5,
+              "x": 442,
+              "y": 589
+            },
+            "mcqChoices": {
+              "A": {
+                "page": 5,
+                "x": 100,
+                "y": 692
+              },
+              "B": {
+                "page": 5,
+                "x": 100,
+                "y": 672
+              },
+              "C": {
+                "page": 5,
+                "x": 100,
+                "y": 651
+              },
+              "D": {
+                "page": 5,
+                "x": 100,
+                "y": 630
+              }
+            }
+          }
+        },
+        {
+          "id": "tug-c01-5-q11",
+          "numberLabel": "11.",
+          "questionType": "true_false",
+          "prompt": "Tandakan (√) pada kenyataan yang BENAR dan (X) pada kenyataan yang PALSU dalam ruangan yang disediakan.",
+          "trueFalseItems": [
+            {
+              "key": "a",
+              "text": "Untuk meyakinkan pendengar, pembentangan tidak semestinya mengandungi maklumat, data dan bukti yang disusun secara logik."
+            },
+            {
+              "key": "b",
+              "text": "Maklumat yang disampaikan dapat daripada segi pendidikan,kewangan atau informasi hanya untuk pemberitahuan."
+            },
+            {
+              "key": "c",
+              "text": "Pembentangan ialah proses menyampaikan idea, projek baru atau hasil kerja yang dipaparkan dan dijelaskan kepada khalayak ramai."
+            },
+            {
+              "key": "d",
+              "text": "Pembentangan adalah aktiviti pengucapan awam yang dijalankan dengan tujuan menyampaikan mesej , memperkenalkan produk atau perkhidmatan."
+            },
+            {
+              "key": "e",
+              "text": "Tujuan penyediaan kertas kerja adalah sebagai panduan dalam melakukan kerja – kerja pendawaian."
+            }
+          ],
           "maxMarks": 5,
-          "rubricHint": "Merangkumi muka hadapan, objektif, skop kerja, lukisan susun atur & skematik, pengiraan beban & saiz kabel, senarai bahan/kos dan jadual pelaksanaan."
+          "rubricHint": "1 markah setiap kenyataan (jumlah 5 markah): a) X (PALSU — mesti mengandungi maklumat, data dan bukti tersusun), b) √ (BENAR), c) √ (BENAR), d) √ (BENAR), e) √ (BENAR).",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 5,
+              "x": 442,
+              "y": 127
+            },
+            "trueFalseRows": [
+              {
+                "key": "a",
+                "page": 5,
+                "boxX": 528,
+                "boxY": 464
+              },
+              {
+                "key": "b",
+                "page": 5,
+                "boxX": 528,
+                "boxY": 401
+              },
+              {
+                "key": "c",
+                "page": 5,
+                "boxX": 528,
+                "boxY": 338
+              },
+              {
+                "key": "d",
+                "page": 5,
+                "boxX": 528,
+                "boxY": 275
+              },
+              {
+                "key": "e",
+                "page": 5,
+                "boxX": 528,
+                "boxY": 211
+              }
+            ]
+          }
+        },
+        {
+          "id": "tug-c01-5-q12",
+          "numberLabel": "12.",
+          "questionType": "diagram_label",
+          "prompt": "Berpandukan rajah di bawah, tuliskan jawapan yang betul diruang yang telah disediakan.",
+          "diagramImageUrl": "/assets/tugasan/kt5_p6_0_824x423.png",
+          "diagramCaption": "Rajah Blok Tajuk Lukisan Teknikal (Saiz A1)",
+          "diagramCallouts": [
+            {
+              "key": "a",
+              "topPercent": 2.2,
+              "leftPercent": 74.8,
+              "widthPercent": 22.8,
+              "heightPercent": 12.2,
+              "opaqueMask": true
+            },
+            {
+              "key": "b",
+              "topPercent": 30.8,
+              "leftPercent": 74.8,
+              "widthPercent": 22.8,
+              "heightPercent": 9.8,
+              "opaqueMask": true
+            },
+            {
+              "key": "c",
+              "topPercent": 41.4,
+              "leftPercent": 74.8,
+              "widthPercent": 22.8,
+              "heightPercent": 9.8,
+              "opaqueMask": true
+            },
+            {
+              "key": "d",
+              "topPercent": 65.5,
+              "leftPercent": 74.8,
+              "widthPercent": 22.8,
+              "heightPercent": 9.6,
+              "opaqueMask": true
+            },
+            {
+              "key": "e",
+              "topPercent": 90,
+              "leftPercent": 74.8,
+              "widthPercent": 22.8,
+              "heightPercent": 9.2,
+              "opaqueMask": true
+            }
+          ],
+          "maxMarks": 5,
+          "rubricHint": "1 markah setiap label betul (jumlah 5 markah): a) Cop pendaftaran / Ruangan cop pendaftaran, b) Tajuk projek, c) Nama pemilik, d) Tajuk lukisan, e) Nombor lukisan.",
+          "pdfOverlay": {
+            "markPos": {
+              "page": 6,
+              "x": 442,
+              "y": 311
+            },
+            "answerSlots": [
+              {
+                "key": "a",
+                "page": 6,
+                "x": 138,
+                "y": 415,
+                "maxWidth": 265
+              },
+              {
+                "key": "b",
+                "page": 6,
+                "x": 138,
+                "y": 394,
+                "maxWidth": 265
+              },
+              {
+                "key": "c",
+                "page": 6,
+                "x": 138,
+                "y": 373,
+                "maxWidth": 265
+              },
+              {
+                "key": "d",
+                "page": 6,
+                "x": 138,
+                "y": 352,
+                "maxWidth": 265
+              },
+              {
+                "key": "e",
+                "page": 6,
+                "x": 138,
+                "y": 332,
+                "maxWidth": 265
+              }
+            ]
+          }
         }
       ],
       "references": [
@@ -2464,7 +6276,61 @@
         "Kementerian Tenaga, Air dan Komunikasi Malaysia. (2008). Buku Panduan Cekap Tenaga. ISBN 9789833474189."
       ],
       "sourceEbookId": "ebook-kpc01-5",
-      "updatedAt": "2026-01-01T00:00:00.000Z"
+      "updatedAt": "2026-01-01T00:00:00.000Z",
+      "sourcePdfUrl": "/assets/aistudio/30._KTC01_5-5__PINK__8abd5aff.pdf",
+      "pdfOverlayMeta": {
+        "namePos": {
+          "page": 1,
+          "x": 58,
+          "y": 302
+        },
+        "icPos": {
+          "page": 1,
+          "x": 226,
+          "y": 302
+        },
+        "datePos": {
+          "page": 1,
+          "x": 428,
+          "y": 302
+        },
+        "userIdPos": {
+          "page": 1,
+          "x": 428,
+          "y": 289
+        },
+        "totalMarkPos": {
+          "page": 6,
+          "x": 468,
+          "y": 230
+        },
+        "statusPos": {
+          "page": 6,
+          "x": 312,
+          "y": 230
+        },
+        "stampBox": {
+          "page": 6,
+          "x": 300,
+          "y": 103,
+          "w": 227,
+          "h": 97
+        },
+        "headerLogoBox": {
+          "page": 1,
+          "x": 54,
+          "y": 631,
+          "w": 162,
+          "h": 141
+        },
+        "headerAddrBox": {
+          "page": 1,
+          "x": 222,
+          "y": 696,
+          "w": 320,
+          "h": 76
+        }
+      }
     },
     {
       "id": "tug-c02-1",
@@ -5714,7 +9580,168 @@
       "updatedAt": "2026-01-01T00:00:00.000Z"
     }
   ],
-  "tugasanSubmissions": [],
+  "tugasanSubmissions": [
+    {
+      "id": "sub-e3376b21-6",
+      "templateId": "tug-c01-1",
+      "cuId": "cu-201",
+      "userId": "usr-1607117a",
+      "userName": "RAJA AZWAN BIN RAJA AHMAD",
+      "userCodeId": "RAJA",
+      "userIcNumber": "930209065261",
+      "submittedAt": "2026-11-27T03:38:31.376Z",
+      "answers": {
+        "tug-c01-1-q1": "D",
+        "tug-c01-1-q2": "D",
+        "tug-c01-1-q3": "C",
+        "tug-c01-1-q4": "C",
+        "tug-c01-1-q5": "A",
+        "tug-c01-1-q6": "A",
+        "tug-c01-1-q7": "C",
+        "tug-c01-1-q8": "A",
+        "tug-c01-1-q9": "C",
+        "tug-c01-1-q10": "B",
+        "tug-c01-1-q11": "{\"a\":\"PELINDUNG MATA\",\"b\":\"SAFETY HELMET\",\"c\":\"HAND GLOVE\",\"d\":\"VASE\",\"e\":\"KASUT KESELAMATAN\"}",
+        "tug-c01-1-q12": "{\"0\":\"4\",\"1\":\"3\",\"2\":\"0\",\"3\":\"1\",\"4\":\"2\"}"
+      },
+      "grades": [
+        {
+          "questionId": "tug-c01-1-q1",
+          "answerText": "D",
+          "marksAwarded": 0,
+          "maxMarks": 1,
+          "status": "salah",
+          "aiFeedback": "",
+          "skemaJawapan": ""
+        },
+        {
+          "questionId": "tug-c01-1-q2",
+          "answerText": "D",
+          "marksAwarded": 1,
+          "maxMarks": 1,
+          "status": "betul",
+          "aiFeedback": "",
+          "skemaJawapan": ""
+        },
+        {
+          "questionId": "tug-c01-1-q3",
+          "answerText": "C",
+          "marksAwarded": 1,
+          "maxMarks": 1,
+          "status": "betul",
+          "aiFeedback": "",
+          "skemaJawapan": ""
+        },
+        {
+          "questionId": "tug-c01-1-q4",
+          "answerText": "C",
+          "marksAwarded": 0,
+          "maxMarks": 1,
+          "status": "salah",
+          "aiFeedback": "",
+          "skemaJawapan": ""
+        },
+        {
+          "questionId": "tug-c01-1-q5",
+          "answerText": "A",
+          "marksAwarded": 1,
+          "maxMarks": 1,
+          "status": "betul",
+          "aiFeedback": "",
+          "skemaJawapan": ""
+        },
+        {
+          "questionId": "tug-c01-1-q6",
+          "answerText": "A",
+          "marksAwarded": 1,
+          "maxMarks": 1,
+          "status": "betul",
+          "aiFeedback": "",
+          "skemaJawapan": ""
+        },
+        {
+          "questionId": "tug-c01-1-q7",
+          "answerText": "C",
+          "marksAwarded": 0,
+          "maxMarks": 1,
+          "status": "salah",
+          "aiFeedback": "",
+          "skemaJawapan": ""
+        },
+        {
+          "questionId": "tug-c01-1-q8",
+          "answerText": "A",
+          "marksAwarded": 1,
+          "maxMarks": 1,
+          "status": "betul",
+          "aiFeedback": "",
+          "skemaJawapan": ""
+        },
+        {
+          "questionId": "tug-c01-1-q9",
+          "answerText": "C",
+          "marksAwarded": 1,
+          "maxMarks": 1,
+          "status": "betul",
+          "aiFeedback": "",
+          "skemaJawapan": ""
+        },
+        {
+          "questionId": "tug-c01-1-q10",
+          "answerText": "B",
+          "marksAwarded": 0,
+          "maxMarks": 1,
+          "status": "salah",
+          "aiFeedback": "",
+          "skemaJawapan": ""
+        },
+        {
+          "questionId": "tug-c01-1-q11",
+          "answerText": "{\"a\":\"PELINDUNG MATA\",\"b\":\"SAFETY HELMET\",\"c\":\"HAND GLOVE\",\"d\":\"VASE\",\"e\":\"KASUT KESELAMATAN\"}",
+          "marksAwarded": 4,
+          "maxMarks": 5,
+          "status": "separa",
+          "itemStatuses": [
+            "betul",
+            "betul",
+            "betul",
+            "salah",
+            "betul"
+          ],
+          "aiFeedback": "",
+          "skemaJawapan": ""
+        },
+        {
+          "questionId": "tug-c01-1-q12",
+          "answerText": "{\"0\":\"4\",\"1\":\"3\",\"2\":\"0\",\"3\":\"1\",\"4\":\"2\"}",
+          "marksAwarded": 5,
+          "maxMarks": 5,
+          "status": "betul",
+          "itemStatuses": [
+            "betul",
+            "betul",
+            "betul",
+            "betul",
+            "betul"
+          ],
+          "aiFeedback": "",
+          "skemaJawapan": ""
+        }
+      ],
+      "totalScore": 15,
+      "maxTotalScore": 20,
+      "percentage": 75,
+      "passed": true,
+      "overallFeedback": "",
+      "gradedByModel": "gemini-4-hydrogen",
+      "driveFolderId": "18i112Folz1C7FNAKiNO7tdXaIMWKwdlE",
+      "driveFolderName": "930209065261",
+      "driveFolderUrl": "https://drive.google.com/drive/folders/18i112Folz1C7FNAKiNO7tdXaIMWKwdlE",
+      "driveFileId": "1II51aiwHiQscEPt9deRMIHfwm300fEjl",
+      "driveFileUrl": "https://drive.google.com/file/d/1II51aiwHiQscEPt9deRMIHfwm300fEjl/view?usp=drivesdk",
+      "driveSyncedAt": "2026-11-27T03:39:20.455Z"
+    }
+  ],
   "sopProgress": [],
   "accessLogs": [
     {
@@ -5728,8 +9755,42 @@
       "subKey": "sub1",
       "action": "view_nota",
       "timestamp": "2026-11-25T07:00:35.935Z"
+    },
+    {
+      "id": "log-74ae3d1d",
+      "userId": "usr-1607117a",
+      "userName": "RAJA AZWAN BIN RAJA AHMAD",
+      "userRole": "pelatih",
+      "cuId": "cu-201",
+      "cuCode": "C01 (15%)",
+      "cuTitle": "Single Phase Drawing (Lukisan Elektrik Satu Fasa) (KT(1/5) · 75%)",
+      "action": "submit_tugasan",
+      "timestamp": "2026-11-27T03:38:31.376Z"
+    },
+    {
+      "id": "log-85378d81",
+      "userId": "usr-1607117a",
+      "userName": "RAJA AZWAN BIN RAJA AHMAD",
+      "userRole": "pelatih",
+      "cuId": "cu-201",
+      "cuCode": "C01 (15%)",
+      "cuTitle": "Single Phase Drawing (Lukisan Elektrik Satu Fasa) (Drive: 930209065261)",
+      "action": "sync_drive",
+      "timestamp": "2026-11-27T03:39:20.455Z"
+    },
+    {
+      "id": "log-ae3c38a3",
+      "userId": "usr-1607117a",
+      "userName": "RAJA AZWAN BIN RAJA AHMAD",
+      "userRole": "pelatih",
+      "cuId": "cu-201",
+      "cuCode": "C01 (15%)",
+      "cuTitle": "Single Phase Drawing (Lukisan Elektrik Satu Fasa) (KT(1/5))",
+      "action": "print_tugasan",
+      "timestamp": "2026-11-27T03:39:25.214Z"
     }
   ],
+  "changeLogs": [],
   "sessions": [
     {
       "tokenHash": "4f1d27a4f21a908d3779f26dc1bd3539ef8f6a3ca6276a6b1ea827207d57146c",
@@ -5765,6 +9826,16 @@
       "tokenHash": "23c52ea10f6c8478f247b2dc558993c7ba7f24abf3f570fee2513bac26982bf9",
       "userId": "admin-root",
       "expiresAt": 1796194821169
+    },
+    {
+      "tokenHash": "0919ee1c952277e2b1a949cbc98f044ac151b1c7249cbbfb5556b79f81f5142c",
+      "userId": "admin-root",
+      "expiresAt": 1796273015289
+    },
+    {
+      "tokenHash": "ab9de1d9cce931dbbc7ee78ee78c6969d4bb2a7c828735be7e3cf7972ed20d80",
+      "userId": "usr-1607117a",
+      "expiresAt": 1796355273361
     }
   ]
 }

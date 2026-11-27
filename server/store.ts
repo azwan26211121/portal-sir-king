@@ -3,9 +3,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type {
   AccessLogEntry,
+  AccessTierRole,
   ApprovalStatus,
   BrandingConfig,
   CUModule,
+  DriveRegistryUserRecord,
+  DriveSystemRegistryPayload,
   EbookNoteModule,
   FileMetadata,
   PublicUser,
@@ -14,17 +17,20 @@ import type {
   TopicLevel,
   TugasanPaper,
   TugasanSubmission,
+  UserChangeLogEntry,
   UserRole,
 } from '../src/types.ts';
 import {
   SEEDED_TUGASAN_PAPERS,
   createDefaultTugasanForCustomCu,
 } from './tugasanBank.ts';
+import { applyPdfOverlaySpecs } from './tugasanPdfMaps.ts';
 
 export interface StoredUser {
   id: string;
   userId: string;
   name: string;
+  icNumber?: string;
   email?: string;
   role: UserRole;
   status: ApprovalStatus;
@@ -59,6 +65,10 @@ export interface StoredBranding {
   footerCaption: string;
   pendingTitle: string;
   pendingMessage: string;
+  collegeName: string;
+  collegeAddress: string;
+  driveRecordsFolderId: string;
+  driveRecordsFolderUrl: string;
   customLogoStoredName: string | null;
   customLogoMimeType: string | null;
   customBannerStoredName: string | null;
@@ -86,6 +96,7 @@ export interface AppStore {
   tugasanSubmissions: TugasanSubmission[];
   sopProgress: SopCheckProgress[];
   accessLogs: AccessLogEntry[];
+  changeLogs: UserChangeLogEntry[];
   sessions: SessionRecord[];
 }
 
@@ -114,6 +125,12 @@ export const DEFAULT_BRANDING_TEXTS = {
 };
 export const DEFAULT_LOGO_URL = '/assets/aistudio/logo_sir_king_portal_93f80572.jpeg';
 export const DEFAULT_BANNER_URL = '/assets/sirking_banner_full.jpeg';
+export const DEFAULT_COLLEGE_NAME = 'KOLEJ KEMAHIRAN / PUSAT BERTAULIAH (SIRKING)';
+export const DEFAULT_COLLEGE_ADDRESS =
+  'TINGKAT 1, BLOK AKADEMIK,\nPUSAT LATIHAN KEMAHIRAN ELEKTRIK';
+export const DEFAULT_DRIVE_RECORDS_FOLDER_ID = '168i3Rpp8PGlGGa-4yNPTtJVCBgiDUc36';
+export const DEFAULT_DRIVE_RECORDS_FOLDER_URL =
+  'https://drive.google.com/drive/folders/168i3Rpp8PGlGGa-4yNPTtJVCBgiDUc36?usp=sharing';
 export const DEFAULT_PAYMENT_QR_TITLE = 'QR Pembayaran';
 export const DEFAULT_PAYMENT_QR_NOTE = 'Imbas QR untuk bayaran rasmi portal.';
 export const DEFAULT_WHATSAPP_QR_TITLE = 'QR WhatsApp';
@@ -2213,6 +2230,10 @@ function createInitialData(): AppStore {
       portalName: DEFAULT_PORTAL_NAME,
       portalTagline: DEFAULT_PORTAL_TAGLINE,
       ...DEFAULT_BRANDING_TEXTS,
+      collegeName: DEFAULT_COLLEGE_NAME,
+      collegeAddress: DEFAULT_COLLEGE_ADDRESS,
+      driveRecordsFolderId: DEFAULT_DRIVE_RECORDS_FOLDER_ID,
+      driveRecordsFolderUrl: DEFAULT_DRIVE_RECORDS_FOLDER_URL,
       customLogoStoredName: null,
       customLogoMimeType: null,
       customBannerStoredName: null,
@@ -2238,6 +2259,7 @@ function createInitialData(): AppStore {
     tugasanSubmissions: [],
     sopProgress: [],
     accessLogs: [],
+    changeLogs: [],
     sessions: [],
   };
 }
@@ -2672,6 +2694,10 @@ function normalizeStore(raw: Record<string, unknown>): { store: AppStore; migrat
       portalName: DEFAULT_PORTAL_NAME,
       portalTagline: DEFAULT_PORTAL_TAGLINE,
       ...DEFAULT_BRANDING_TEXTS,
+      collegeName: DEFAULT_COLLEGE_NAME,
+      collegeAddress: DEFAULT_COLLEGE_ADDRESS,
+      driveRecordsFolderId: DEFAULT_DRIVE_RECORDS_FOLDER_ID,
+      driveRecordsFolderUrl: DEFAULT_DRIVE_RECORDS_FOLDER_URL,
       customLogoStoredName: null,
       customLogoMimeType: null,
       customBannerStoredName: null,
@@ -2701,7 +2727,11 @@ function normalizeStore(raw: Record<string, unknown>): { store: AppStore; migrat
       base.branding.authGateTitle === undefined ||
       base.branding.welcomePrefix === undefined ||
       base.branding.footerCaption === undefined ||
-      base.branding.pendingTitle === undefined
+      base.branding.pendingTitle === undefined ||
+      base.branding.collegeName === undefined ||
+      base.branding.collegeAddress === undefined ||
+      base.branding.driveRecordsFolderId === undefined ||
+      base.branding.driveRecordsFolderUrl === undefined
     ) {
       migrated = true;
     }
@@ -2721,6 +2751,12 @@ function normalizeStore(raw: Record<string, unknown>): { store: AppStore; migrat
       footerCaption: base.branding.footerCaption || DEFAULT_BRANDING_TEXTS.footerCaption,
       pendingTitle: base.branding.pendingTitle || DEFAULT_BRANDING_TEXTS.pendingTitle,
       pendingMessage: base.branding.pendingMessage || DEFAULT_BRANDING_TEXTS.pendingMessage,
+      collegeName: base.branding.collegeName || DEFAULT_COLLEGE_NAME,
+      collegeAddress: base.branding.collegeAddress ?? DEFAULT_COLLEGE_ADDRESS,
+      driveRecordsFolderId:
+        base.branding.driveRecordsFolderId || DEFAULT_DRIVE_RECORDS_FOLDER_ID,
+      driveRecordsFolderUrl:
+        base.branding.driveRecordsFolderUrl || DEFAULT_DRIVE_RECORDS_FOLDER_URL,
       customLogoStoredName: base.branding.customLogoStoredName ?? null,
       customLogoMimeType: base.branding.customLogoMimeType ?? null,
       customBannerStoredName: base.branding.customBannerStoredName ?? null,
@@ -2746,13 +2782,35 @@ function normalizeStore(raw: Record<string, unknown>): { store: AppStore; migrat
   }
   const existingPaperIds = new Set(tugasanPapers.map((p) => p.id));
   for (const seededPaper of SEEDED_TUGASAN_PAPERS) {
-    if (!existingPaperIds.has(seededPaper.id) && cus.some((c) => c.id === seededPaper.cuId)) {
+    const existingIdx = tugasanPapers.findIndex((p) => p.id === seededPaper.id);
+    if (existingIdx === -1 && cus.some((c) => c.id === seededPaper.cuId)) {
       tugasanPapers.push({
         ...seededPaper,
         questions: seededPaper.questions.map((q) => ({ ...q })),
       });
       existingPaperIds.add(seededPaper.id);
       migrated = true;
+    } else if (
+      existingIdx !== -1 &&
+      seededPaper.id.startsWith('tug-c01-') &&
+      !tugasanPapers[existingIdx].questions.some(
+        (q) => q.questionType && q.questionType !== 'text'
+      )
+    ) {
+      tugasanPapers[existingIdx] = {
+        ...seededPaper,
+        questions: seededPaper.questions.map((q) => ({ ...q })),
+      };
+      migrated = true;
+    } else if (existingIdx !== -1 && seededPaper.id.startsWith('tug-c01-')) {
+      const hydrated = applyPdfOverlaySpecs(tugasanPapers[existingIdx]);
+      if (
+        !tugasanPapers[existingIdx].pdfOverlayMeta ||
+        !tugasanPapers[existingIdx].sourcePdfUrl
+      ) {
+        tugasanPapers[existingIdx] = hydrated;
+        migrated = true;
+      }
     }
   }
   for (const cu of cus) {
@@ -2772,6 +2830,13 @@ function normalizeStore(raw: Record<string, unknown>): { store: AppStore; migrat
     migrated = true;
   }
 
+  const changeLogs: UserChangeLogEntry[] = Array.isArray(base.changeLogs)
+    ? [...base.changeLogs].slice(-1000)
+    : [];
+  if (!Array.isArray(base.changeLogs)) {
+    migrated = true;
+  }
+
   return {
     store: {
       adminEmail: base.adminEmail || ADMIN_EMAIL,
@@ -2784,6 +2849,7 @@ function normalizeStore(raw: Record<string, unknown>): { store: AppStore; migrat
       tugasanSubmissions,
       sopProgress,
       accessLogs: base.accessLogs || [],
+      changeLogs,
       sessions,
     },
     migrated,
@@ -2827,7 +2893,8 @@ export function toPublicUser(user: StoredUser, allUsers: StoredUser[]): PublicUs
     id: user.id,
     userId: user.userId,
     name: user.name,
-    email: user.email,
+    icNumber: user.icNumber || '',
+    email: user.email || (user.role === 'master_admin' ? ADMIN_EMAIL : ''),
     role: user.role,
     status: user.status,
     passwordConfigured: user.role === 'admin' ? Boolean(user.passwordHash) : undefined,
@@ -2838,6 +2905,246 @@ export function toPublicUser(user: StoredUser, allUsers: StoredUser[]): PublicUs
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };
+}
+
+export function toAccessTierRole(role: UserRole): AccessTierRole {
+  switch (role) {
+    case 'master_admin':
+      return 'MASTER_ADMIN';
+    case 'admin':
+      return 'ADMIN';
+    case 'pengajar':
+      return 'PENGAJAR';
+    default:
+      return 'PELATIH';
+  }
+}
+
+export function recordSystemChangeLog(
+  store: AppStore,
+  entry: Omit<UserChangeLogEntry, 'id' | 'timestamp'> & { id?: string; timestamp?: string }
+): UserChangeLogEntry {
+  if (!Array.isArray(store.changeLogs)) {
+    store.changeLogs = [];
+  }
+  const full: UserChangeLogEntry = {
+    id: entry.id || `chg-${crypto.randomUUID().slice(0, 10)}`,
+    timestamp: entry.timestamp || new Date().toISOString(),
+    actorId: entry.actorId,
+    actorName: entry.actorName,
+    actorRole: entry.actorRole,
+    action: entry.action,
+    targetUserId: entry.targetUserId,
+    targetName: entry.targetName,
+    details: entry.details.slice(0, 500),
+  };
+  store.changeLogs.push(full);
+  if (store.changeLogs.length > 1000) {
+    store.changeLogs = store.changeLogs.slice(-1000);
+  }
+  return full;
+}
+
+export function buildDriveSystemRegistryPayload(
+  store: AppStore,
+  options?: { visibleUsers?: StoredUser[] }
+): DriveSystemRegistryPayload {
+  const levelMap = new Map(store.levels.map((l) => [l.id, `${l.code} (${l.title})`]));
+  const userSource = options?.visibleUsers || store.users;
+  const records: DriveRegistryUserRecord[] = userSource
+    .map((u) => {
+      const sup = u.supervisorId
+        ? store.users.find((s) => s.id === u.supervisorId)
+        : undefined;
+      return {
+        id: u.id,
+        userId: u.userId,
+        name: u.name,
+        icNumber: u.icNumber || '-',
+        email: u.email || (u.role === 'master_admin' ? store.adminEmail || ADMIN_EMAIL : ''),
+        role: u.role,
+        accessTier: toAccessTierRole(u.role),
+        status: u.status,
+        supervisorId: u.supervisorId,
+        supervisorName: sup ? sup.name : u.role === 'pelatih' ? 'PENTADBIR UTAMA' : '-',
+        requestedLevelId: u.requestedLevelId,
+        requestedLevelLabel: u.requestedLevelId
+          ? levelMap.get(u.requestedLevelId) || u.requestedLevelId
+          : '-',
+        approvedLevelId: u.approvedLevelId,
+        approvedLevelLabel: u.approvedLevelId
+          ? levelMap.get(u.approvedLevelId) || u.approvedLevelId
+          : '-',
+        createdAt: u.createdAt,
+        updatedAt: u.updatedAt,
+      };
+    })
+    .sort((a, b) => {
+      const order: Record<UserRole, number> = {
+        master_admin: 0,
+        admin: 1,
+        pengajar: 2,
+        pelatih: 3,
+      };
+      const diff = (order[a.role] ?? 9) - (order[b.role] ?? 9);
+      return diff !== 0 ? diff : a.name.localeCompare(b.name);
+    });
+
+  return {
+    version: 2,
+    updatedAt: new Date().toISOString(),
+    collegeName: store.branding.collegeName || DEFAULT_COLLEGE_NAME,
+    driveRecordsFolderId:
+      store.branding.driveRecordsFolderId || DEFAULT_DRIVE_RECORDS_FOLDER_ID,
+    roles: ['MASTER_ADMIN', 'ADMIN', 'PENGAJAR', 'PELATIH'],
+    summary: {
+      totalUsers: records.length,
+      approved: records.filter((u) => u.status === 'approved').length,
+      pending: records.filter((u) => u.status === 'pending').length,
+      rejected: records.filter((u) => u.status === 'rejected').length,
+    },
+    users: records,
+    changeLogs: (store.changeLogs || []).slice(-300),
+  };
+}
+
+export function reconcileDriveSystemRegistry(
+  store: AppStore,
+  actor: StoredUser,
+  incoming: unknown
+): { updatedUsers: number; addedLogs: number; conflictsSkipped: number } {
+  if (!incoming || typeof incoming !== 'object') {
+    return { updatedUsers: 0, addedLogs: 0, conflictsSkipped: 0 };
+  }
+  const payload = incoming as {
+    users?: unknown;
+    changeLogs?: unknown;
+  };
+  let updatedUsers = 0;
+  let addedLogs = 0;
+  let conflictsSkipped = 0;
+
+  const isPrivilegedAdmin = actor.role === 'admin' || actor.role === 'master_admin';
+
+  if (Array.isArray(payload.users)) {
+    for (const raw of payload.users) {
+      if (!raw || typeof raw !== 'object') continue;
+      const rec = raw as Partial<DriveRegistryUserRecord>;
+      if (typeof rec.id !== 'string' || !rec.id) continue;
+      const local = store.users.find((u) => u.id === rec.id);
+      if (!local) {
+        // Never blindly recreate privileged or passwordless users from JSON
+        conflictsSkipped++;
+        continue;
+      }
+      if (local.role === 'master_admin' || local.id === 'admin-root') {
+        conflictsSkipped++;
+        continue;
+      }
+      if (local.role === 'admin' && actor.role !== 'master_admin') {
+        conflictsSkipped++;
+        continue;
+      }
+      if (
+        actor.role === 'pengajar' &&
+        (local.role !== 'pelatih' ||
+          (local.supervisorId !== actor.id &&
+            local.supervisorId !== 'admin-root' &&
+            local.supervisorId !== null))
+      ) {
+        conflictsSkipped++;
+        continue;
+      }
+
+      const incomingTs = typeof rec.updatedAt === 'string' ? Date.parse(rec.updatedAt) : NaN;
+      const localTs = Date.parse(local.updatedAt || '');
+      if (!Number.isFinite(incomingTs) || (Number.isFinite(localTs) && incomingTs <= localTs)) {
+        continue;
+      }
+
+      let changed = false;
+      if (typeof rec.name === 'string' && rec.name.trim().length >= 2 && rec.name.trim() !== local.name) {
+        local.name = rec.name.trim().slice(0, 80);
+        changed = true;
+      }
+      if (typeof rec.icNumber === 'string' && rec.icNumber !== '-' && rec.icNumber.trim() !== (local.icNumber || '')) {
+        local.icNumber = rec.icNumber.trim().slice(0, 20);
+        changed = true;
+      }
+      if (
+        typeof rec.email === 'string' &&
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rec.email.trim()) &&
+        rec.email.trim().toLowerCase() !== (local.email || '').toLowerCase()
+      ) {
+        local.email = rec.email.trim().toLowerCase().slice(0, 120);
+        changed = true;
+      }
+      if (
+        (rec.status === 'approved' || rec.status === 'pending' || rec.status === 'rejected') &&
+        local.role === 'pelatih' &&
+        rec.status !== local.status
+      ) {
+        local.status = rec.status;
+        changed = true;
+      }
+      if (
+        isPrivilegedAdmin &&
+        local.role === 'pelatih' &&
+        typeof rec.approvedLevelId === 'string' &&
+        store.levels.some((l) => l.id === rec.approvedLevelId) &&
+        rec.approvedLevelId !== local.approvedLevelId
+      ) {
+        local.approvedLevelId = rec.approvedLevelId;
+        changed = true;
+      }
+      if (changed) {
+        local.updatedAt = new Date(incomingTs).toISOString();
+        updatedUsers++;
+      }
+    }
+  }
+
+  if (Array.isArray(payload.changeLogs)) {
+    const existingIds = new Set((store.changeLogs || []).map((l) => l.id));
+    for (const rawLog of payload.changeLogs) {
+      if (!rawLog || typeof rawLog !== 'object') continue;
+      const l = rawLog as Partial<UserChangeLogEntry>;
+      if (
+        typeof l.id === 'string' &&
+        l.id &&
+        !existingIds.has(l.id) &&
+        typeof l.timestamp === 'string' &&
+        typeof l.action === 'string' &&
+        typeof l.details === 'string'
+      ) {
+        existingIds.add(l.id);
+        store.changeLogs.push({
+          id: l.id.slice(0, 48),
+          timestamp: l.timestamp,
+          actorId: typeof l.actorId === 'string' ? l.actorId.slice(0, 48) : 'drive-sync',
+          actorName: typeof l.actorName === 'string' ? l.actorName.slice(0, 80) : 'Drive Sync',
+          actorRole:
+            l.actorRole === 'master_admin' ||
+            l.actorRole === 'admin' ||
+            l.actorRole === 'pengajar' ||
+            l.actorRole === 'pelatih'
+              ? l.actorRole
+              : 'admin',
+          action: l.action.slice(0, 64),
+          targetUserId: typeof l.targetUserId === 'string' ? l.targetUserId.slice(0, 48) : undefined,
+          targetName: typeof l.targetName === 'string' ? l.targetName.slice(0, 80) : undefined,
+          details: l.details.slice(0, 500),
+        });
+        addedLogs++;
+      }
+    }
+    store.changeLogs.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+    if (store.changeLogs.length > 1000) {
+      store.changeLogs = store.changeLogs.slice(-1000);
+    }
+  }
+
+  return { updatedUsers, addedLogs, conflictsSkipped };
 }
 
 export function toPublicBranding(store: AppStore): BrandingConfig {
@@ -2864,6 +3171,12 @@ export function toPublicBranding(store: AppStore): BrandingConfig {
     pendingMessage: store.branding.pendingMessage || DEFAULT_BRANDING_TEXTS.pendingMessage,
     logoUrl: hasCustomLogo ? `/api/branding/logo?v=${ver}` : DEFAULT_LOGO_URL,
     bannerUrl: hasCustomBanner ? `/api/branding/banner?v=${ver}` : DEFAULT_BANNER_URL,
+    collegeName: store.branding.collegeName || DEFAULT_COLLEGE_NAME,
+    collegeAddress: store.branding.collegeAddress ?? DEFAULT_COLLEGE_ADDRESS,
+    driveRecordsFolderId:
+      store.branding.driveRecordsFolderId || DEFAULT_DRIVE_RECORDS_FOLDER_ID,
+    driveRecordsFolderUrl:
+      store.branding.driveRecordsFolderUrl || DEFAULT_DRIVE_RECORDS_FOLDER_URL,
     hasCustomLogo,
     hasCustomBanner,
     paymentQrUrl: hasPaymentQr ? `/api/branding/payment-qr?v=${ver}` : null,
